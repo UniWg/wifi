@@ -1,11 +1,14 @@
-#include "stdio.h"
-#include "costanti.h"
+#include "general_include.h"
 
+/* ------------------------------------------------------------------------- */
 
-int main (int argc, char** argv) {
+int main (int argv, char** argc) {
 
-	printf ("Stazione 1 : %d\n",_sta1);
+	printf ("inizio main\n");
 	
-    return (0);
+	start_mezzo_condiviso ();
+
+	return (0);
 }
+
 
