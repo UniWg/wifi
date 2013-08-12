@@ -16,6 +16,9 @@ main:	${DIR_SRC}/main.c
 
 mezzo:	${DIR_SRC}/mezzo.c
 	gcc -o ${DIR_OBJ}/mezzo.o -I ${DIR_HDR} -c ${GCCFLAGS} ${DIR_SRC}/mezzo.c
+
+pseudo_frame: ${DIR_SRC}/pseudo_frame.c
+	gcc -o ${DIR_OBJ}/pseudo_frame.o -I ${DIR_HDR} -c ${GCCFLAGS} ${DIR_SRC}/pseudo_frame.c
 	
 read_write: ${DIR_SRC}/read_write.c
 	gcc -o ${DIR_OBJ}/read_write.o -I ${DIR_HDR} -c ${GCCFLAGS} ${DIR_SRC}/read_write.c
@@ -25,7 +28,7 @@ stazione: ${DIR_SRC}/stazione.c
 
 # Linker
 
-wifi.bin:	applica main mezzo read_write stazione
+wifi.bin:	applica main mezzo pseudo_frame read_write stazione
 	gcc  -o wifi.bin ${LINKERFLAGS} ${DIR_OBJ}/*.o
 
 # Cancellazione dei file di compilazione
