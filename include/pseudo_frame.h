@@ -44,22 +44,35 @@
 	tra la lunghezza del pacchetto e tutto ciò che non è campo dati (_pframe_other_len) */
 typedef struct pframe {
 	char data, dtype, tods, fromds, rts, cts, scan, duration, crc;
-	int packetl, seqcrtl;
+	int packetl, seqctrl;
 	char addr1[6], addr2[6], addr3[6], addr4[6];
 	char *buf;
 } pframe;
 
 /* ------------------------------------------------------------------------- */
 
-char* get_new_frame_buffer (void);
+char* set_frame_buffer (pframe* pf);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
-* Descrizione	: alloca un frame buffer da utilizzare per leggere / scrivere
-				  frame pseudo 802.11
-* Ritorno 		: restituisce il puntatore al frame buffer
+* Descrizione	: setta il frame buffer in base al contenuto della struttura 
+				  pframe. Non permette di fare un settaggio selettivo.
+				  Vengono settati TUTTI i "campi" del frame buffer.
+* Par. Ritorno  : indirizzo del frame buffer
+* Par. Formali  :
+			- pf  : puntatore alla struttura pframe
 ---------------------------------------------------------------------------- */
 
-void free_frame_buffer (char* buffer);
+pframe* get_frame_buffer (char* buf);
+/* ----------------------------------------------------------------------------
+* Nome			: carlo
+* Descrizione	: prende il contenuto del buffer e lo trasferisce in una
+				  struttura di tipo pframe
+* Par. Ritorno  : struttura che rapprensenta il contenuto del buffer
+* Par. Formali  :
+			- buf : puntatore al frame buffer da leggere
+---------------------------------------------------------------------------- */
+
+void remove_frame_buffer (char* buffer);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
 * Descrizione	: dealloca un frame buffer
@@ -67,23 +80,12 @@ void free_frame_buffer (char* buffer);
 			- buffer : indirizzo del buffer da deallocare
 ---------------------------------------------------------------------------- */
 
-void clear_frame_buffer (char* buffer);
+void remove_pframe (pframe* pf);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
-* Descrizione	: azzera il contenuto del buffer (reset)
+* Descrizione	: dealloca una struttura di tipo pframe
 * Par. Formali  :
-			- buffer : indirizzo del buffer da cancellare
----------------------------------------------------------------------------- */
-
-void set_frame_buffer (char* buf,pframe* pf);
-/* ----------------------------------------------------------------------------
-* Nome			: carlo
-* Descrizione	: setta il frame buffer in base al contenuto della struttura 
-				  pframe. Non permette di fare un settaggio selettivo.
-				  Vengono settati TUTTI i "campi" del frame buffer.
-* Par. Formali  :
-			- buf : puntatore al frame buffer da compilare
-			- pf  : puntatore alla struttura pframe
+			- pf : indirizzo della struttura da deallocare
 ---------------------------------------------------------------------------- */
 
 #endif
