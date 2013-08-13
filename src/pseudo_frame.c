@@ -28,8 +28,8 @@ char* set_frame_buffer (pframe* pf) {
 	/* Settiamo tutti i campi del frame buffer. La struttura deve essere
 		compilata correttamente in tutte le sue parti */
 	char* buf = (char*) malloc ((*pf).packetl);
-	int* pi;
-	int i;
+	char* pi;
+	int i,vi;
 	
 	*(buf+0) = (*pf).data;
 	*(buf+1) = (*pf).dtype;
@@ -40,23 +40,25 @@ char* set_frame_buffer (pframe* pf) {
 	*(buf+6) = (*pf).scan;
 	*(buf+7) = (*pf).duration;
 	
-	pi = (int*)(*pf).packetl;
-	*(buf+8) = *(pi+2); 
-	*(buf+9) = *(pi+3);
+	i = (*pf).packetl;
+	pi = (char *) &i;
+	*(buf+8) = *(pi+1); 	/* Prendiamo solo i due byte più a dx 3210 */
+	*(buf+9) = *(pi+0);
 	
 	set_addr (1,buf,(*pf).addr1);
 	set_addr (2,buf,(*pf).addr2);
 	set_addr (3,buf,(*pf).addr3);
 	set_addr (4,buf,(*pf).addr4);
 	
-	pi = (int*)(*pf).seqctrl;
+	vi = (*pf).seqctrl;
+	pi = (char *) &vi;
 	for (i=0;i<4;i++)
-		*(buf+_seqctrl_pos+i) = *(pi+i);
+		*(buf+_seqctrl_pos+i) = *(pi+3-i);	/* dobbiamo rovesciare le cifre */
 	
 	/* La dimensione della parte dati la ricaviamo dalla differenza tra
 		la lunghezza totale del pacchetto e la lunghezza di tutto ciò
 		che non è parte dati */
-	for (i=0;i<((*pf).packetl - _pframe_other_len);i++)
+	for (i=0;i<((*pf).packetl - _pframe_other_len);i++) 
 		*(buf+_payload_pos+i) = (*pf).buf[i];
 		
 	*(buf+_payload_pos+i) = (*pf).crc;
@@ -67,10 +69,10 @@ char* set_frame_buffer (pframe* pf) {
 /* ------------------------------------------------------------------------- */
 
 pframe* get_frame_buffer (char* buf) {
-	pframe *pf = (pframe*) malloc (sizeof (pframe));
-	int* pi;
-	int i,plen;
-
+	pframe *pf = (pframe*) malloc (sizeof (pframe));	
+	int i,plen,vi;
+	char* pi;
+	
 	(*pf).data = *(buf+0);
 	(*pf).dtype = *(buf+1);
 	(*pf).tods = *(buf+2);
@@ -80,18 +82,22 @@ pframe* get_frame_buffer (char* buf) {
 	(*pf).scan = *(buf+6);
 	(*pf).duration = *(buf+7);
 	
-	pi = (int*)(*pf).packetl;
-	*(pi+2) = *(buf+8); 
-	*(pi+3) = *(buf+9);
+	vi = 0;
+	pi = (char *) &vi;
+	*(pi+1) = *(buf+8); 
+	*(pi+0) = *(buf+9);
+	(*pf).packetl = vi;
 	
 	get_addr (1,buf,(*pf).addr1);
 	get_addr (2,buf,(*pf).addr2);
 	get_addr (3,buf,(*pf).addr3);
 	get_addr (4,buf,(*pf).addr4);
 	
-	pi = (int*)(*pf).seqctrl;
+	vi = 0;
+	pi = (char *) &vi;
 	for (i=0;i<4;i++)
-		*(pi+i) = *(buf+_seqctrl_pos+i);
+		*(pi+3-i) = *(buf+_seqctrl_pos+i);
+	(*pf).seqctrl = vi;
 	
 	/* Calcoliamo la lunghezza della parte dati ... */
 	plen = (*pf).packetl - _pframe_other_len;
@@ -116,13 +122,86 @@ void remove_frame_buffer (char* buffer) {
 /* ------------------------------------------------------------------------- */
 
 void remove_pframe (pframe* pf) {
-	/* rimuoviamo prima lo spazio relativo al buffer dati ... */
-	free ((*pf).buf);
-	/* ... e poi la struttura vera e propria */
 	free (pf);
 }
 
 /* ------------------------------------------------------------------------- */
+
+
+
+/* !!!!!!!!!!!!!!!!!!!! DA CANCELLARE !!!!!!!!!!!!!!!!!!!!!!!!!!!!1 */
+
+/* ------------------ */
+void pseudo_test (void) {
+	pframe *p = (pframe*) malloc (sizeof (pframe));
+	char m [10] = "messaggioK";
+	char* fb;
+	int i;
+	
+	/* SCRITTURA */
+	
+	printf ("Test sulla struttura dati del frame buffer\n");
+	printf ("\nOra scriviamo i dati ...\n");
+	
+	(*p).data = 1;
+	(*p).dtype = 2;
+	(*p).tods = 3;
+	(*p).fromds = 4;
+	(*p).rts = 5;
+	(*p).cts = 6;
+	(*p).scan = 7;
+	(*p).duration = 127;
+	(*p).packetl = _pframe_other_len + 10;
+	strncpy ((*p).addr1,"AB44EF",6);
+	strncpy ((*p).addr2,"LM76PQ",6);
+	strncpy ((*p).addr3,"abcdef",6);
+	strncpy ((*p).addr4,"lmnopq",6);
+	(*p).seqctrl = 65532;
+	(*p).buf = (char*)&m;
+	(*p).crc = 98;	
+	
+	fb = set_frame_buffer (p);
+	
+	/* LETTURA */
+	
+	printf ("\nE poi li leggiamo ...\n");
+	(*p).buf = NULL;
+	remove_pframe (p);		/* Deallochiamo per essere certi che venga cancellato */
+	
+	p = get_frame_buffer (fb);
+	
+	printf ("Data	: %d\n",(int)(*p).data);
+	printf ("Dtype 	: %d\n",(int)(*p).dtype);
+	printf ("ToDS 	: %d\n",(int)(*p).tods);
+	printf ("FromDS	: %d\n",(int)(*p).fromds);
+	printf ("rts	: %d\n",(int)(*p).rts);
+	printf ("cts 	: %d\n",(int)(*p).cts);
+	printf ("scan 	: %d\n",(int)(*p).scan);
+	printf ("durata	: %d\n",(int)(*p).duration);
+	printf ("PLen	: %d\n",(int)(*p).packetl);
+	printf ("addr1	: ");
+	for (i=0;i<6;i++) {
+		printf ("%c",(*p).addr1 [i]);
+	}
+	printf ("\naddr2	: ");
+	for (i=0;i<6;i++) {
+		printf ("%c",(*p).addr2 [i]);
+	}
+	printf ("\naddr3	: ");
+	for (i=0;i<6;i++) {
+		printf ("%c",(*p).addr3 [i]);
+	}
+	printf ("\naddr4	: ");
+	for (i=0;i<6;i++) {
+		printf ("%c",(*p).addr4 [i]);
+	}
+	printf ("\nSeqctr	: %d\n",(int)(*p).seqctrl);
+	printf ("dati	: ");
+	for (i=0;i<10;i++) 
+		printf ("%c",(*p).buf[i]);
+	printf ("\nCRC	: %d\n",(int)(*p).crc);
+	
+}
 
 
 
