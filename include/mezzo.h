@@ -1,10 +1,20 @@
 #ifndef _MEZZO_H
 #define _MEZZO_H
 
-void start_mezzo_condiviso (void);
+/* ------------------------------------------------------------------------- */
+/* --- Variabili globali --- */
+
+pthread_t mc_thread;	/* identificato del thread del mezzo condiviso */
+
+/* ------------------------------------------------------------------------- */
+/* --- Prototipi delle funzioni --- */
+
+void start_mc_thread (void);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
-* Descrizione	: inizializza il thread del mezzo condiviso
+* Descrizione	: fa partire il thread del mezzo condiviso
 ---------------------------------------------------------------------------- */
+
+
 
 #endif

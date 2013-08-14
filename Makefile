@@ -1,5 +1,5 @@
 GCCFLAGS= -Wall -pedantic 
-LINKERFLAGS= -lpthread
+LINKERFLAGS= -pthread
 DIR_SRC = src
 DIR_HDR = include
 DIR_OBJ = obj
@@ -29,7 +29,7 @@ stazione: ${DIR_SRC}/stazione.c
 # Linker
 
 wifi.bin:	applica main mezzo pseudo_frame read_write stazione
-	gcc  -o wifi.bin ${LINKERFLAGS} ${DIR_OBJ}/*.o
+	gcc -o wifi.bin ${LINKERFLAGS} ${DIR_OBJ}/*.o
 
 # Cancellazione dei file di compilazione
 

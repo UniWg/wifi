@@ -2,9 +2,38 @@
 
 /* ------------------------------------------------------------------------- */
 
+void null_print (const char *format, ...) {
+	/* non fa nulla. Serve per non eseguire le stampa di debug */
+}
+
+/* ------------------------------------------------------------------------- */
+
+void inizializza (void) {
+	/* Inizilizza le stazioni : nome, mac, ... */
+	inizializza_stazioni ();
+}
+
+/* ------------------------------------------------------------------------- */
+
+void start_thread (void) {
+	/* Thread del mezzo condiviso */
+	start_mc_thread ();
+	
+}
+
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+
 int main (int argv, char** argc) {
 
-	inizializza_stazioni ();
+	DEBUG_PRINT "Inizilizzazione variabili e strutture\n" END_DP;
+	inizializza ();
+
+	DEBUG_PRINT "Inizilizzazione thread\n" END_DP;
+	start_thread ();
+
+	pthread_exit (NULL);
 
 	return (0);
 }
