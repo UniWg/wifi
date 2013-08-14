@@ -38,6 +38,20 @@
 */
 
 /* ------------------------------------------------------------------------- */
+/* Costanti */
+
+/* frame buffer : lunghezza parte data */
+#define _pframe_data_len 2000
+/* frame buffer : lunghezza tutto il resto */
+#define _pframe_other_len 39
+/* dimensione massima in byte del frame buffer */
+#define	_max_frame_buffer_size _pframe_data_len+_pframe_other_len
+/* indice iniziale di Addr1, seqctrl, payload all'interno del frame buffer */
+#define _addr1_pos 10
+#define _seqctrl_pos 34
+#define _payload_pos 38
+
+/* ------------------------------------------------------------------------- */
 /* Struttura dati d'appoggio */
 
 /*  la dimensione del buffer (buf) viene calcolata automaticamente come differenza
@@ -47,12 +61,12 @@ typedef struct pframe {
 	int packetl, seqctrl;
 	char addr1[6], addr2[6], addr3[6], addr4[6];
 	char *buf;
-} pframe;
+} pframe_t;
 
 /* ------------------------------------------------------------------------- */
+/* Prototipi delle funzioni */
 
-
-char* set_frame_buffer (pframe* pf);
+char* set_frame_buffer (pframe_t* pf);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
 * Descrizione	: setta il frame buffer in base al contenuto della struttura 
@@ -63,7 +77,7 @@ char* set_frame_buffer (pframe* pf);
 			- pf  : puntatore alla struttura pframe
 ---------------------------------------------------------------------------- */
 
-pframe* get_frame_buffer (char* buf);
+pframe_t* get_frame_buffer (char* buf);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
 * Descrizione	: prende il contenuto del buffer e lo trasferisce in una
@@ -81,7 +95,7 @@ void remove_frame_buffer (char* buffer);
 			- buffer : indirizzo del buffer da deallocare
 ---------------------------------------------------------------------------- */
 
-void remove_pframe (pframe* pf);
+void remove_pframe (pframe_t* pf);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
 * Descrizione	: dealloca una struttura di tipo pframe

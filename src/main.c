@@ -4,6 +4,8 @@
 
 int main (int argv, char** argc) {
 
+	inizializza_stazioni ();
+
 	return (0);
 }
 

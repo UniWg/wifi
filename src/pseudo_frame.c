@@ -24,7 +24,7 @@ void get_addr (char indy,char* buf, char* ad) {
 
 /* ------------------------------------------------------------------------- */
 
-char* set_frame_buffer (pframe* pf) {
+char* set_frame_buffer (pframe_t* pf) {
 	/* Settiamo tutti i campi del frame buffer. La struttura deve essere
 		compilata correttamente in tutte le sue parti */
 	char* buf = (char*) malloc ((*pf).packetl);
@@ -68,8 +68,8 @@ char* set_frame_buffer (pframe* pf) {
 
 /* ------------------------------------------------------------------------- */
 
-pframe* get_frame_buffer (char* buf) {
-	pframe *pf = (pframe*) malloc (sizeof (pframe));	
+pframe_t* get_frame_buffer (char* buf) {
+	pframe_t *pf = (pframe_t*) malloc (sizeof (pframe_t));	
 	int i,plen,vi;
 	char* pi;
 	
@@ -121,7 +121,7 @@ void remove_frame_buffer (char* buffer) {
 
 /* ------------------------------------------------------------------------- */
 
-void remove_pframe (pframe* pf) {
+void remove_pframe (pframe_t* pf) {
 	free (pf);
 }
 
@@ -133,7 +133,7 @@ void remove_pframe (pframe* pf) {
 
 /* ------------------ */
 void pseudo_test (void) {
-	pframe *p = (pframe*) malloc (sizeof (pframe));
+	pframe_t *p = (pframe_t*) malloc (sizeof (pframe_t));
 	char m [10] = "messaggioK";
 	char* fb;
 	int i;
