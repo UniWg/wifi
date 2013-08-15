@@ -27,11 +27,9 @@ void mac2str (const char* mac,char* asc) {
 
 /* ------------------------------------------------------------------------- */
 void str2mac (char* asc,char* mac) {
-	char s [18];
-
-	sprintf (s,"%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
+	/* restituisce una stringa ben formata, quindi anche con il terminatore */
+	sprintf (mac,"%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
 		(int)asc[0],(int)asc[1],(int)asc[2],(int)asc[3],(int)asc[4],(int)asc[5]);	
-	strncpy (mac,s,17);	
 }
 
 /* ------------------------------------------------------------------------- */
@@ -39,16 +37,53 @@ void inizializza_stazioni (void) {
 	int i;
 	char* mac = (char*) malloc (sizeof (char) * 6);
 	
+	/* Inizializza la struttura dati di ogni stazione */
 	for (i=0;i<_nsta;i++) {
-		stazione [i].indice = i+1;
-		mac2str (_mac_stax [i],stazione [i].mac);	
-		stazione [i].campo = _sta_di_stax [i];
+		stazione_g [i].indice = i+1;
+		mac2str (_mac_stax [i],stazione_g [i].mac);	
+		stazione_g [i].campo = _sta_di_stax [i];
 	}
 
 	free (mac);
 }
 
+/* ------------------------------------------------------------------------- */
+void* main_sta_thread (void* nsp) {
+	int ns = *(int*)nsp-1;	/* togliamo 1 così ns è allineato con l'indice dell'array */
+	char mac [18];
+	
+	while (1) {
+		str2mac (stazione_g [ns].mac,mac);
+		printf ("Stazione %d -- MAC: %s\n",ns+1,mac);
+		sleep (ns+1);
+	}
+	
+	/* Questa parte non viene mai eseguita. Viene messa solo per correttezza formale */
+	free (nsp);
+	return (0);
+}
 
+/* ------------------------------------------------------------------------- */
+void start_sta_thread (void) {
+	/* Lancia i thread di ogni stazione 
+		Ai thread verrà passato solo il numero di stazione. La struttura
+		dati relativa è accessibile a livello globale */
+	int r,i;
+	int *n;
+
+	for (i=1;i<=_nsta;i++) {
+		n = (int*) malloc (sizeof(int));
+		*n = i;
+		r = pthread_create (&mc_thread_g,NULL,main_sta_thread,n);
+		if (r) {
+			printf ("Errore nella creazione del thread della stazione numero %d\n",i);
+			printf ("Codice di errore riportato da pthread_create(): %d\n",r);
+			exit(-1);
+		}
+	}
+}
+
+/* ------------------------------------------------------------------------- */
 
 
 

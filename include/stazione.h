@@ -38,7 +38,10 @@ extern const char _mac_stax [][17];
  	char mac [6];	/* mac address */
  	char campo;		/* mappa di bit che identifica le stazioni raggiungibili */
  } station_t;
-station_t stazione [4];
+ 
+/* ------------------------------------------------------------------------- */
+/* Variabili globali */ 
+station_t stazione_g [4];
 
 /* ------------------------------------------------------------------------- */
 /* Prototipi delle funzioni */
@@ -68,10 +71,16 @@ void str2mac (char* asc,char* mac);
 void inizializza_stazioni (void);
 /* ----------------------------------------------------------------------------
 * Nome			: 
-* Descrizione	: inizializza le stazioni definendo:
+* Descrizione	: inizializza la struttura dati delle stazioni definendo:
 					- numero della stazione
 					- mac address
 					- campo di visibilità elettromagnetica
+---------------------------------------------------------------------------- */
+
+void start_sta_thread (void);
+/* ----------------------------------------------------------------------------
+* Nome			: 
+* Descrizione	: lancia i thread delle stazioni
 ---------------------------------------------------------------------------- */
 
 #endif

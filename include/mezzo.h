@@ -4,7 +4,7 @@
 /* ------------------------------------------------------------------------- */
 /* --- Variabili globali --- */
 
-pthread_t mc_thread;	/* identificato del thread del mezzo condiviso */
+pthread_t mc_thread_g;	/* identificato del thread del mezzo condiviso */
 
 /* ------------------------------------------------------------------------- */
 /* --- Prototipi delle funzioni --- */
