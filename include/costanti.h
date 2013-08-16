@@ -1,22 +1,38 @@
 #ifndef _COSTANTI_H
 #define _COSTANTI_H
 
+typedef struct sockaddr sa_t;
+typedef struct sockaddr_in sain_t;
+
+/* ------------------------------------------------------------------------- */
+/* Costanti */
+#define _portaIP 6000
+#define _indirizzoIP "127.0.0.0"
+
+/* ------------------------------------------------------------------------- */
+/* Sezione per le variabili di DEBUG */
+
 /* impostazione stampa di debug */
 #define STAMPE_DEBUG 1
-
-
-
-
+#define MC_DEBUG 1
 
 /* impostazione macro */
 
 /*------------------------------------*/
 #if STAMPE_DEBUG == 1
 	#define DEBUG_PRINT printf(
-	#define END_DP )
+	#define END_DP );
 #else
 	#define DEBUG_PRINT null_print(
-	#define END_DP )
+	#define END_DP );
+#endif
+/*------------------------------------*/
+#if MC_DEBUG == 1
+	#define DEBUG_MC printf(
+	#define END_MC );
+#else
+	#define DEBUG_MC null_print(
+	#define END_MC );
 #endif
 /*------------------------------------*/
 

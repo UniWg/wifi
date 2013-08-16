@@ -52,6 +52,10 @@ void* main_sta_thread (void* nsp) {
 	int ns = *(int*)nsp-1;	/* togliamo 1 così ns è allineato con l'indice dell'array */
 	char mac [18];
 	
+	/* Attendiamo un paio di secondi in modo da dare il tempo al mezzo condiviso 
+		di mettersi in ascolto. Dopodichè possiamo effettuare la connessione anche noi */
+	sleep (2);
+	
 	while (1) {
 		str2mac (stazione_g [ns].mac,mac);
 		printf ("Stazione %d -- MAC: %s\n",ns+1,mac);

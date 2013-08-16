@@ -2,9 +2,13 @@
 #define _MEZZO_H
 
 /* ------------------------------------------------------------------------- */
+/* --- Costanti --- */
+#define _max_connection 10	/* Numero massimo di connessioni contemporanee */
+
+/* ------------------------------------------------------------------------- */
 /* --- Variabili globali --- */
 
-pthread_t mc_thread_g;	/* identificato del thread del mezzo condiviso */
+pthread_t mc_thread_g;	/* identificativo del thread del mezzo condiviso */
 
 /* ------------------------------------------------------------------------- */
 /* --- Prototipi delle funzioni --- */
