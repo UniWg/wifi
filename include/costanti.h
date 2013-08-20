@@ -6,6 +6,8 @@ typedef struct sockaddr_in sain_t;
 
 /* ------------------------------------------------------------------------- */
 /* Costanti */
+
+/* Porta ed indirizzo per la connessione con il mezzo condiviso */
 #define _portaIP 6000
 #define _indirizzoIP "127.0.0.0"
 
@@ -20,7 +22,7 @@ typedef struct sockaddr_in sain_t;
 
 /*------------------------------------*/
 #if STAMPE_DEBUG == 1
-	#define DEBUG_PRINT printf(
+	#define DEBUG_PRINT printf("<DEB> "
 	#define END_DP );
 #else
 	#define DEBUG_PRINT null_print(
@@ -28,7 +30,7 @@ typedef struct sockaddr_in sain_t;
 #endif
 /*------------------------------------*/
 #if MC_DEBUG == 1
-	#define DEBUG_MC printf(
+	#define DEBUG_MC printf("<DEB> "
 	#define END_MC );
 #else
 	#define DEBUG_MC null_print(

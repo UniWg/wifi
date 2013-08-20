@@ -9,7 +9,18 @@
 /* --- Variabili globali --- */
 
 pthread_t mc_thread_g;	/* identificativo del thread del mezzo condiviso */
+int mezzofd_g;			/* fd del mezzo condiviso */
 
+/* ------------------------------------------------------------------------- */
+/* --- Strutture dati --- */
+
+typedef struct stato {
+	int nready;			/* risultato al termine della select */
+	fd_set Rset;		/* fd da controllare il lettura */
+	fd_set Wset;		/* fd da controllare in scrittura */
+	int connfd;			/* fd utilizzato per il collegamento al server */
+	int clientfd [FD_SETSIZE];	/* fd dei client connessi (sono le nostre stazioni) */
+} stato_t;
 /* ------------------------------------------------------------------------- */
 /* --- Prototipi delle funzioni --- */
 
