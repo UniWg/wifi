@@ -61,10 +61,44 @@ void init_stato (stato_t *s) {
 	(*s).nready = -1;
 	FD_ZERO (&(*s).Rset);
 	FD_ZERO (&(*s).Wset);
+	(*s).fdtop = mezzofd_g;
 	(*s).connfd = -1;
-	for (i=0; i<FD_SETSIZE; i++) {		/* FD_SETSIZE = 1024 */
+	for (i=0; i<FD_SETSIZE; i++) {		/* FD_SETSIZE = 1024 (a noi ne bastano 4) */
 		(*s).clientfd [i] = -1;			/* fd disponibile */
 	}
+	/* Anche se mezzofd è accessibile a livello globale lo memorizziamo
+		in modo da avere tutte le informazioni nella struttura */
+	(*s).mezzofd = mezzofd_g;
+}
+
+/* ----------------------------------------------------------------------------
+* Nome			: carlo
+* Descrizione	: attende la connessione di tutte le stazioni
+* Par. Formali  : 
+			- stato : indirizzo della struttura che mantiene lo stato della select
+---------------------------------------------------------------------------- */
+void wait_for_sta_connection (stato_t *s) {
+	struct timeval t;
+	int numero_eventi;
+	printf ("------------------------------------------------------------------\n");
+	printf ("Mezzo Condiviso : in attesa di connessioni da parte delle stazioni\n");
+	
+	do {
+		do {
+			FD_ZERO (&(*s).Rset);
+			FD_ZERO (&(*s).Wset);
+			FD_SET ((*s).mezzofd, &(*s).Rset);
+			t.tv_sec = 1; t.tv_usec = 0;
+			/* Dobbiamo monitorare anche il file descriptor successivo all'ultimo 
+				impegnato in modo da intercettare nuove connessioni */
+			numero_eventi = select ((*s).fdtop+1,&(*s).Rset,&(*s).Wset,NULL,&t);
+			printf (".");
+		} while ((numero_eventi<=0) || (errno==EINTR));
+		printf ("SONO USCITO!! -%d-\n",numero_eventi);
+		
+	} while (0);
+	
+	printf ("------------------------------------------------------------------\n");
 }
 
 /* ----------------------------------------------------------------------------
@@ -77,33 +111,7 @@ void select_setup (stato_t *s) {
 	/* La select ha bisogno di essere riconfigurata completamente ad ogni ciclo */
 	FD_ZERO (&(*s).Rset);
 	FD_ZERO (&(*s).Wset);
-	
-}
-
-/* ----------------------------------------------------------------------------
-* Nome			: carlo
-* Descrizione	: attende la connessione di tutte le stazioni
-* Par. Formali  : 
-			- stato : indirizzo della struttura che mantiene lo stato della select
----------------------------------------------------------------------------- */
-void wait_for_sta_connection (stato_t *stato) {
-	printf ("------------------------------------------------------------------\n");
-	printf ("Mezzo Condiviso : in attesa di connessioni da parte delle stazioni\n");
-	
-	
-	/*
-	  SONO QUA
-		BISOGNA FARE UN PRIMO CICLO IN CUI SI ATTENDONO LE CONNESSIONI DALLE STAZIONI
-		
-		NELLA SELECT GESTITA IN main_mc_thread IL CONTROLLO DI CONNESSIONE DI NUOVE
-		STAZIONI NON DOVRA' PIU' ESSERE FATTO 
-	*/
-		
-	do {
-		select_setup (stato);
-	} while (0);
-	
-	printf ("------------------------------------------------------------------\n");
+	FD_SET ((*s).mezzofd, &(*s).Rset);
 }
 
 /* ------------------------------------------------------------------------- 
@@ -122,6 +130,12 @@ void* main_mc_thread (void* param) {
 	init_stato (&stato);
 	wait_for_sta_connection (&stato);
 	
+	
+	/*
+	  
+		NELLA SELECT GESTITA IN main_mc_thread IL CONTROLLO DI CONNESSIONE DI NUOVE
+		STAZIONI NON DOVRA' PIU' ESSERE FATTO 
+	*/
 	while (1) {
 		/* Ciclo di controllo della SELECT */
 		do {
