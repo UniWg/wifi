@@ -9,7 +9,9 @@ typedef struct sockaddr_in sain_t;
 
 /* Porta ed indirizzo per la connessione con il mezzo condiviso */
 #define _portaIP 6000
-#define _indirizzoIP "127.0.0.0"
+#define _indirizzoIP "127.0.0.1"
+/* Dimensione del buffer di scmabio mezzo - stazioni */
+#define _maxbuflen 2000
 
 /* ------------------------------------------------------------------------- */
 /* Sezione per le variabili di DEBUG */

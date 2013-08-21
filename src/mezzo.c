@@ -79,26 +79,84 @@ void init_stato (stato_t *s) {
 ---------------------------------------------------------------------------- */
 void wait_for_sta_connection (stato_t *s) {
 	struct timeval t;
-	int numero_eventi;
+	int numero_eventi,save_errno,i,j,client_fd,nsta;
+	socklen_t struct_len; 
+	sain_t client_addr;
+	
 	printf ("------------------------------------------------------------------\n");
 	printf ("Mezzo Condiviso : in attesa di connessioni da parte delle stazioni\n");
 	
-	do {
+	nsta = 0;
+	/* Attendiamo la connessione di tutte le stazioni */
+	while (nsta<_nsta) {
 		do {
 			FD_ZERO (&(*s).Rset);
 			FD_ZERO (&(*s).Wset);
 			FD_SET ((*s).mezzofd, &(*s).Rset);
+			/* Impostiamo il timeout di un secondo */
 			t.tv_sec = 1; t.tv_usec = 0;
 			/* Dobbiamo monitorare anche il file descriptor successivo all'ultimo 
 				impegnato in modo da intercettare nuove connessioni */
 			numero_eventi = select ((*s).fdtop+1,&(*s).Rset,&(*s).Wset,NULL,&t);
+			/* Stampiamo un punto ogni secondo come indicazione di attesa */
+			save_errno = errno;
 			printf (".");
-		} while ((numero_eventi<=0) || (errno==EINTR));
-		printf ("SONO USCITO!! -%d-\n",numero_eventi);
+			errno = save_errno;
+		} while ((numero_eventi<0) && (errno==EINTR));
 		
-	} while (0);
+		if (numero_eventi < 0) {
+			printf ("Mezzo Condiviso : Errore nella select di attesa connessioni\n");
+			fflush (stderr);
+			exit (-1);
+		}
+		
+		/* Controlliamo tutti gli eventi che si sono verificati */
+		for (i=0;i<numero_eventi;i++) {
+			DEBUG_MC "MC: tentativo di connessione di una stazione\n" END_MC
+			/* Controllo se il socket del server (sul quale sta ascoltando)
+				è stato settato in lettura dalla listen */
+			if (FD_ISSET ((*s).mezzofd,&(*s).Rset)) {
+				/* Accettiamo la richiesta di connessione del client */
+				struct_len = sizeof (client_addr);
+				client_fd = accept ((*s).mezzofd, (sa_t*) &client_addr, &struct_len);
+				
+				if (client_fd<0) {
+					 if (errno!=EINTR) {
+					 	printf ("Mezzo Condiviso : Errore nella accept\n");
+						exit (-1);
+					 }
+				}
+				else {
+					/* Abbiamo una nuova connessione */
+					/* Scandiamo il vettore alla ricerca del primo descrittore settato */
+					for (j=0;j<FD_SETSIZE;j++) {
+						/* Salviamo i dati della stazione */
+						if ((*s).clientfd [j] < 0) {
+							(*s).clientfd [j] = client_fd;
+							(*s).clibuf [j].len = 0;
+							(*s).clibuf [j].first = 0;
+							
+							/* Verifichiamo se aggiornare l'indice più alto da controllare */
+							if (j > (*s).fdtop)		(*s).fdtop = j;
+							
+							nsta++;
+							printf (">>>>> Stazione %d di %d connessa\n",nsta,_nsta);
+							
+							fflush (stdout);
+							break;
+						}
+						else {
+							printf ("Mezzo Condiviso : tentata connessione su socket già impegnato\n");
+							exit (-1);
+						}
+						
+					}
+				}
+			}
+		}	
+	}
 	
-	printf ("------------------------------------------------------------------\n");
+	printf ("\n------------------------------------------------------------------\n");
 }
 
 /* ----------------------------------------------------------------------------
@@ -142,7 +200,7 @@ void* main_mc_thread (void* param) {
 			select_setup (&stato);
 		} while (0);
 		
-		printf ("MEZZO CONDIVISO !!!\n");
+		printf ("MEZZO CONDIVISO\n");
 		sleep (1);
 	}
 	
