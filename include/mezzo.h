@@ -4,6 +4,7 @@
 /* ------------------------------------------------------------------------- */
 /* --- Costanti --- */
 #define _max_connection 10	/* Numero massimo di connessioni contemporanee */
+#define _Cmezzo _CCyan		/* Colore dei messaggi del mezzo condiviso */
 
 /* ------------------------------------------------------------------------- */
 /* --- Variabili globali --- */

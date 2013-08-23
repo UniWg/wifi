@@ -14,6 +14,7 @@
 
 #include "applica.h"
 #include "costanti.h"
+#include "colors.h"
 #include "mezzo.h"
 #include "pseudo_frame.h"
 #include "read_write.h"

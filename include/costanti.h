@@ -24,16 +24,16 @@ typedef struct sockaddr_in sain_t;
 
 /*------------------------------------*/
 #if STAMPE_DEBUG == 1
-	#define DEBUG_PRINT printf("<DEB> "
-	#define END_DP );
+	#define DEBUG_PRINT printf(_CBIYellow "<DEB> "
+	#define END_DP _CColor_Off);
 #else
 	#define DEBUG_PRINT null_print(
 	#define END_DP );
 #endif
 /*------------------------------------*/
 #if MC_DEBUG == 1
-	#define DEBUG_MC printf("<DEB> "
-	#define END_MC );
+	#define DEBUG_MC printf(_CBIYellow "<DEB> "
+	#define END_MC _CColor_Off);
 #else
 	#define DEBUG_MC null_print(
 	#define END_MC );
