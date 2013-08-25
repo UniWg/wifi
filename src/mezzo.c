@@ -82,6 +82,8 @@ void wait_for_sta_connection (stato_t *s) {
 	int numero_eventi,save_errno,i,j,client_fd,nsta,n;
 	socklen_t struct_len; 
 	sain_t client_addr;
+	pframe_t* f; 
+	char mac [18];
 	
 	printf (_Cmezzo "------------------------------------------------------------------\n" _CColor_Off);
 	printf (_Cmezzo "Mezzo Condiviso : in attesa di connessioni da parte delle stazioni\n" _CColor_Off);
@@ -150,10 +152,11 @@ SPACCHETTARLO E VEDERE SE IL MITTENTE HA IL MAC TRA QUELLI AMMESSI
 							do {
 								n = recv (client_fd,(*s).clibuf [j].buf,_maxbuflen,0);
 							} while ((n<0) && (errno==EINTR));
-							printf (_Cmezzo "messaggio : %s\n" _CColor_Off,(*s).clibuf [j].buf);
 							
-							
-							
+							f = get_frame_buffer ((*s).clibuf [j].buf);
+							str2mac ((*f).addr2,mac);
+
+							printf (_Cmezzo "mac mittente : %s\n" _CColor_Off,mac);							
 							fflush (stdout);
 							/* Usciamo quando non ci sono più richieste da gestire */
 							if (--numero_eventi <= 0)

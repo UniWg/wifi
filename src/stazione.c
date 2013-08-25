@@ -47,16 +47,17 @@ void packet_test (int ns) {
 	f.duration = 5;	
 	f.packetl = _pframe_other_len;			/* Lunghezza base del pacchetto (non ci sono dati) */
 	cpmac (_mac_mezzo,f.addr1);				/* mac address del mezzo */
-	cpmac (stazione_g [ns].mac,f.addr2);	/* mac address della stazione che sta trasmettendo */
+	strncpy (f.addr2,stazione_g [ns].mac,6);	/* mac address della stazione che sta trasmettendo */
 	f.crc = _crc_ok;
+	
+	
 	
 	/* Covertiamo la struttura in array di byte */
 	fb = set_frame_buffer ((pframe_t*)&f);
-	
+
 	/* Spedizione messaggio */
-	len = sizeof (fb);
+	len = f.packetl;
 	nwrite=0;
-	
 	/* ORA DOBBIAMO TENTARE DI MANDARE UN FRAME 802.11 */
 	/* E POI BISOGNA SIMULARE UN TENTATIVO DI CONNESSIONE */
 	
@@ -79,19 +80,27 @@ void cpmac (const char* src,char* dst) {
 }
 
 /* ------------------------------------------------------------------------- */
+/* converte un carattere rappresentato in hex nel relativo decimale */
+int chex2int (char c) {
+	/* il carattere DEVE essere 0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F */
+	if ((c>47) && (c<58))	/* è un numero */
+		return (c-48);
+	return (c-55);			/* è una lettera */
+}
+
+/* ------------------------------------------------------------------------- */
 void mac2str (const char* mac,char* asc) {
 	int i,j;
 	unsigned int n;
-	char u [3];
+	char u [2];
 	
-	u [2] = 0;	/* terminatore */
 	j = 0;
 	for (i=0;i<16;i+=3) {
 		/* Prendiamo due caratteri (un numero hex) ... */
 		u [0] = mac [i];
 		u [1] = mac [i+1];
 		/* ... li convertiamo prima in numero ... */
-		sscanf (u,"%x",&n);
+		n = (chex2int (u [0])*16) + chex2int (u [1]);
 		/* ... e poi in ascii */
 		asc [j] = (char) n; j++;
 	}
@@ -100,8 +109,12 @@ void mac2str (const char* mac,char* asc) {
 /* ------------------------------------------------------------------------- */
 void str2mac (char* asc,char* mac) {
 	/* restituisce una stringa ben formata, quindi anche con il terminatore */
-	sprintf (mac,"%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
-		(int)asc[0],(int)asc[1],(int)asc[2],(int)asc[3],(int)asc[4],(int)asc[5]);	
+	
+	/* METTERE A POSTO LA CONVERSIONE */
+	/* da asci 6 a stringa 17 si può usare snprintf
+	/* snprintf (mac,"%s:%s:  ",s1,s2,...)
+	
+	
 }
 
 /* ------------------------------------------------------------------------- */

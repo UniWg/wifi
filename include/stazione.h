@@ -27,7 +27,7 @@ extern const int _sta_di_stax [];
 #define _mac_sta1 "10:11:12:13:14:15"
 #define _mac_sta2 "20:21:22:23:24:25"
 #define _mac_sta3 "30:31:32:33:34:35"
-#define _mac_sta4 "40:41:42:43:44:45"
+#define _mac_sta4 "F4:41:42:43:44:45"
 extern const char _mac_stax [][17];
 
 /* ------------------------------------------------------------------------- */

@@ -74,7 +74,7 @@ char* set_frame_buffer (pframe_t* pf);
 * Descrizione	: setta il frame buffer in base al contenuto della struttura 
 				  pframe. Non permette di fare un settaggio selettivo.
 				  Vengono settati TUTTI i "campi" del frame buffer.
-* Par. Ritorno  : indirizzo del frame buffer (non bisogna inizializzare l'array)
+* Par. Ritorno  : indirizzo del frame buffer (il chiamante non deve allocare l'array)
 * Par. Formali  :
 			- pf  : puntatore alla struttura pframe 
 ---------------------------------------------------------------------------- */
@@ -84,7 +84,8 @@ pframe_t* get_frame_buffer (char* buf);
 * Nome			: carlo
 * Descrizione	: prende il contenuto del buffer e lo trasferisce in una
 				  struttura di tipo pframe
-* Par. Ritorno  : struttura che rapprensenta il contenuto del buffer
+* Par. Ritorno  : struttura che rapprensenta il contenuto del buffer (il chiamante
+				  non deve allocare la struttura)
 * Par. Formali  :
 			- buf : puntatore al frame buffer da leggere
 ---------------------------------------------------------------------------- */
