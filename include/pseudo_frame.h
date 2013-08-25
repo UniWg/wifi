@@ -51,6 +51,8 @@
 #define _seqctrl_pos 34
 #define _payload_pos 38
 
+#define _crc_ok 1	/* valore di default del CRC. Indica che il pacchetto non è corrotto */
+
 /* ------------------------------------------------------------------------- */
 /* Struttura dati d'appoggio */
 
@@ -72,9 +74,9 @@ char* set_frame_buffer (pframe_t* pf);
 * Descrizione	: setta il frame buffer in base al contenuto della struttura 
 				  pframe. Non permette di fare un settaggio selettivo.
 				  Vengono settati TUTTI i "campi" del frame buffer.
-* Par. Ritorno  : indirizzo del frame buffer
+* Par. Ritorno  : indirizzo del frame buffer (non bisogna inizializzare l'array)
 * Par. Formali  :
-			- pf  : puntatore alla struttura pframe
+			- pf  : puntatore alla struttura pframe 
 ---------------------------------------------------------------------------- */
 
 pframe_t* get_frame_buffer (char* buf);

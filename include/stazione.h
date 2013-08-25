@@ -8,7 +8,7 @@
 #define _nsta 4
 #define _Csta _CGreen		/* Colore dei messaggi delle stazioni */
 
-/* valori per la mappa di bit (campo campo di station) */
+/* valori per la mappa di bit dfa combinare con _sta_di_sta (campo "campo" di station_t) */
 #define _campo_sta1 1
 #define _campo_sta2 2
 #define _campo_sta3 4
@@ -47,6 +47,17 @@ int stafd_g [_nsta];			/* fd delle stazioni */
 
 /* ------------------------------------------------------------------------- */
 /* Prototipi delle funzioni */
+
+void cpmac (const char* src,char* dst);
+/* ----------------------------------------------------------------------------
+* Nome			: 
+* Descrizione	: copia il mac address dal formato esteso al formato a 6 byte.
+				  Utilizzato in genere per copiare il mac address dentro
+				  i campi addr della struttura pframe_t
+* Par. Formali  :
+			src : mac address sorgente in formato esteso
+			dst : mac address destinazione in formato compatto 6 byte		    
+---------------------------------------------------------------------------- */
 
 void mac2str (const char* mac,char* asc);
 /* ----------------------------------------------------------------------------

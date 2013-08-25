@@ -6,6 +6,8 @@
 #define _max_connection 10	/* Numero massimo di connessioni contemporanee */
 #define _Cmezzo _CCyan		/* Colore dei messaggi del mezzo condiviso */
 
+#define _mac_mezzo "A1:B2:C3:D4:E5:F6"
+
 /* ------------------------------------------------------------------------- */
 /* --- Variabili globali --- */
 

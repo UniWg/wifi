@@ -11,7 +11,8 @@ void packet_test (int ns) {
 	/* Ci colleghiamo al mezzo condiviso e gli spediamo un pacchetto */
 	sain_t mezzo;
 	int ris,n, nwrite, len;
-	char* msg = "messaggio di test";
+	char* fb; 		/* Frame buffer (con campo dati a zero) */
+	pframe_t f;
 	
 	/* Apriamo il socket -- IPV4, TCP */
 	if ((stafd_g [ns] = socket (AF_INET,SOCK_STREAM,0))<0) {
@@ -38,14 +39,28 @@ void packet_test (int ns) {
 	DEBUG_STA "STA: Stazione connessa al mezzo condiviso\n" END_MC
 	fflush(stdout);
 	
+	/* Impostiamo i campi del frame da spedire */
+	bzero (&f,sizeof (f));
+	f.data = 0;		/* frame di controllo */
+	f.tods = 1;		/* destinato al mezzo condiviso */
+	f.scan = 1;		/* scansione - utilizzata per richiedere il collegamento al mezzo */
+	f.duration = 5;	
+	f.packetl = _pframe_other_len;			/* Lunghezza base del pacchetto (non ci sono dati) */
+	cpmac (_mac_mezzo,f.addr1);				/* mac address del mezzo */
+	cpmac (stazione_g [ns].mac,f.addr2);	/* mac address della stazione che sta trasmettendo */
+	f.crc = _crc_ok;
+	
+	/* Covertiamo la struttura in array di byte */
+	fb = set_frame_buffer ((pframe_t*)&f);
+	
 	/* Spedizione messaggio */
-	len = strlen(msg)+1;
+	len = sizeof (fb);
 	nwrite=0;
 	
 	/* ORA DOBBIAMO TENTARE DI MANDARE UN FRAME 802.11 */
 	/* E POI BISOGNA SIMULARE UN TENTATIVO DI CONNESSIONE */
 	
-	while( (n = write(stafd_g [ns], &(msg[nwrite]), len-nwrite)) >0 )
+	while( (n = write(stafd_g [ns], &(fb[nwrite]), len-nwrite)) >0 )
 		nwrite+=n;
 	if(n<0) {
 		char msgerror[1024];
@@ -53,6 +68,14 @@ void packet_test (int ns) {
 		perror(msgerror);
 		fflush(stdout);
 	}
+}
+
+/* ------------------------------------------------------------------------- */
+
+void cpmac (const char* src,char* dst) {
+	char macapp [6];
+	mac2str (src,macapp);
+	strncpy (dst,macapp,6);
 }
 
 /* ------------------------------------------------------------------------- */
