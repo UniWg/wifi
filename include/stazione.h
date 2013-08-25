@@ -6,6 +6,7 @@
 
 /* Numero delle stazioni */
 #define _nsta 4
+#define _Csta _CGreen		/* Colore dei messaggi delle stazioni */
 
 /* valori per la mappa di bit (campo campo di station) */
 #define _campo_sta1 1
@@ -16,10 +17,10 @@ extern const int _campo_stax [];
 
 /* definizione delle stazioni raggiungibili */
 /* ogni stazione viene esclusa dalla sua lista */
-#define _sta_di_sta1 0x0A
-#define _sta_di_sta2 0x09
-#define _sta_di_sta3 0x08
-#define _sta_di_sta4 0x07
+#define _sta_di_sta1 0x0A	/* 1010  ( 4321 )*/
+#define _sta_di_sta2 0x09	/* 1001 */
+#define _sta_di_sta3 0x08	/* 1000 */ 
+#define _sta_di_sta4 0x07	/* 0111 */
 extern const int _sta_di_stax [];
 
 /* definizione dei mac address (valori casuali) */
@@ -41,7 +42,8 @@ extern const char _mac_stax [][17];
  
 /* ------------------------------------------------------------------------- */
 /* Variabili globali */ 
-station_t stazione_g [4];
+station_t stazione_g [_nsta];	/* identità delle stazioni */
+int stafd_g [_nsta];			/* fd delle stazioni */
 
 /* ------------------------------------------------------------------------- */
 /* Prototipi delle funzioni */

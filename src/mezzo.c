@@ -12,7 +12,7 @@ void inizializza_socket (void) {
 		
 	/* Apriamo il socket -- IPV4, TCP */
 	if ((mezzofd_g = socket (AF_INET,SOCK_STREAM,0))<0) {
-		printf (_CBIPurple "Mezzo Condiviso : Errore nell'apertura del socket\n" _CColor_Off);
+		printf (_Cerror "Mezzo Condiviso : Errore nell'apertura del socket\n" _CColor_Off);
 		exit (-1);
 	}
 	DEBUG_MC "MC: Socket connesso\n" END_MC
@@ -21,7 +21,7 @@ void inizializza_socket (void) {
 		connessioni multiple sulla stessa porta */
 	optval = 1;
 	if (setsockopt (mezzofd_g,SOL_SOCKET,SO_REUSEADDR,(char*)&optval,sizeof (optval)) < 0) {
-		printf (_CBIPurple "Mezzo Condiviso : errore nella setsockopt : %d %s\n" _CColor_Off,errno,strerror (errno));
+		printf (_Cerror "Mezzo Condiviso : errore nella setsockopt : %d %s\n" _CColor_Off,errno,strerror (errno));
 		exit (-1);
 	}
 	
@@ -33,7 +33,7 @@ void inizializza_socket (void) {
 	mcaddr.sin_addr.s_addr = inet_addr (_indirizzoIP);
 	mcaddr.sin_port = htons (_portaIP);
 	if (bind (mezzofd_g,(sa_t*)&mcaddr,sizeof (mcaddr))<0) {
-		printf (_CBIPurple "Mezzo Condiviso : Errore nella bind\n" _CColor_Off);
+		printf (_Cerror "Mezzo Condiviso : Errore nella bind\n" _CColor_Off);
 		close (mezzofd_g);
 		exit (-1);
 	}
@@ -41,7 +41,7 @@ void inizializza_socket (void) {
 	
 	/* Infine ci mettiamo in ascolto, in attesa di connessioni */
 	if (listen (mezzofd_g,_max_connection) < 0) {
-		printf (_CBIPurple "Mezzo Condiviso : Errore nella listen\n" _CColor_Off);
+		printf (_Cerror "Mezzo Condiviso : Errore nella listen\n" _CColor_Off);
 		close (mezzofd_g);
 		exit (-1);
 	}
@@ -105,7 +105,7 @@ void wait_for_sta_connection (stato_t *s) {
 		} while ((numero_eventi<0) && (errno==EINTR));
 		
 		if (numero_eventi < 0) {
-			printf (_CBIPurple "Mezzo Condiviso : Errore nella select di attesa connessioni\n" _CColor_Off);
+			printf (_Cerror "Mezzo Condiviso : Errore nella select di attesa connessioni\n" _CColor_Off);
 			fflush (stderr);
 			exit (-1);
 		}
@@ -122,7 +122,7 @@ void wait_for_sta_connection (stato_t *s) {
 				
 				if (client_fd<0) {
 					 if (errno!=EINTR) {
-					 	printf (_CBIPurple "Mezzo Condiviso : Errore nella accept\n" _CColor_Off);
+					 	printf (_Cerror "Mezzo Condiviso : Errore nella accept\n" _CColor_Off);
 						exit (-1);
 					 }
 				}
@@ -155,10 +155,12 @@ SPACCHETTARLO E VEDERE SE IL MITTENTE HA IL MAC TRA QUELLI AMMESSI
 							
 							
 							fflush (stdout);
-							break;
+							/* Usciamo quando non ci sono più richieste da gestire */
+							if (--numero_eventi <= 0)
+								break;
 						}
 						else {
-							printf (_CBIPurple "Mezzo Condiviso : tentata connessione su socket già impegnato\n" _CColor_Off);
+							printf (_Cerror "Mezzo Condiviso : tentata connessione su socket già impegnato\n" _CColor_Off);
 							exit (-1);
 						}
 					}
@@ -224,8 +226,8 @@ void start_mc_thread (void) {
 
 	r = pthread_create (&mc_thread_g,NULL,main_mc_thread,NULL);
 	if (r) {
-		printf (_CBIPurple "Errore nella creazione del thread del mezzo condiviso\n" _CColor_Off);
-		printf (_CBIPurple "Codice di errore riportato da pthread_create(): %d\n" _CColor_Off,r);
+		printf (_Cerror "Errore nella creazione del thread del mezzo condiviso\n" _CColor_Off);
+		printf (_Cerror "Codice di errore riportato da pthread_create(): %d\n" _CColor_Off,r);
 		exit(-1);
 	}
 }

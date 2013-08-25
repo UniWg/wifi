@@ -12,6 +12,7 @@ typedef struct sockaddr_in sain_t;
 #define _indirizzoIP "127.0.0.1"
 /* Dimensione del buffer di scmabio mezzo - stazioni */
 #define _maxbuflen 2000
+#define _Cerror _CBIRed		/* Colore dei messaggi di errore */
 
 /* ------------------------------------------------------------------------- */
 /* Sezione per le variabili di DEBUG */
@@ -19,6 +20,7 @@ typedef struct sockaddr_in sain_t;
 /* impostazione stampa di debug */
 #define STAMPE_DEBUG 1
 #define MC_DEBUG 1
+#define STA_DEBUG 1
 
 /* impostazione macro */
 
@@ -38,6 +40,15 @@ typedef struct sockaddr_in sain_t;
 	#define DEBUG_MC null_print(
 	#define END_MC );
 #endif
+/*------------------------------------*/
+#if STA_DEBUG == 1
+	#define DEBUG_STA printf(_CBIYellow "<DEB> "
+	#define END_STA _CColor_Off);
+#else
+	#define DEBUG_STA null_print(
+	#define END_STA );
+#endif
+
 /*------------------------------------*/
 
 

@@ -4,6 +4,57 @@ const int _campo_stax [] = {_campo_sta1,_campo_sta2,_campo_sta3,_campo_sta4};
 const int _sta_di_stax [] = {_sta_di_sta1,_sta_di_sta2,_sta_di_sta3,_sta_di_sta4};
 const char _mac_stax [][17] = {_mac_sta1,_mac_sta2,_mac_sta3,_mac_sta4};
 
+
+/* ------------------------------------------------------------------------- */
+void packet_test (int ns) {
+	/* funzione di prova da CANCELLARE */
+	/* Ci colleghiamo al mezzo condiviso e gli spediamo un pacchetto */
+	sain_t mezzo;
+	int ris,n, nwrite, len;
+	char* msg = "messaggio di test";
+	
+	/* Apriamo il socket -- IPV4, TCP */
+	if ((stafd_g [ns] = socket (AF_INET,SOCK_STREAM,0))<0) {
+		printf (_Cerror "Stazione : Errore nell'apertura del socket\n" _CColor_Off);
+		exit (-1);
+	}
+	DEBUG_STA "STA: Socket connesso\n" END_MC
+	
+	
+	/* per completezza qui bisogna aggiungere la bind */
+	
+	/* assign our destination address */
+	memset ( &mezzo, 0, sizeof(mezzo) );
+	mezzo.sin_family = AF_INET;
+	mezzo.sin_addr.s_addr =	inet_addr (_indirizzoIP);
+	mezzo.sin_port = htons (_portaIP);
+
+	/* Richiesta di connessione */
+	ris = connect (stafd_g [ns], (sa_t*) &mezzo, sizeof (mezzo));
+	if (ris < 0)  {
+		printf (_Cerror"Stazione : connect() failed, Err: %d \"%s\"\n" _CColor_Off,errno,strerror(errno));
+		exit(1);
+	}
+	DEBUG_STA "STA: Stazione connessa al mezzo condiviso\n" END_MC
+	fflush(stdout);
+	
+	/* Spedizione messaggio */
+	len = strlen(msg)+1;
+	nwrite=0;
+	
+	/* ORA DOBBIAMO TENTARE DI MANDARE UN FRAME 802.11 */
+	/* E POI BISOGNA SIMULARE UN TENTATIVO DI CONNESSIONE */
+	
+	while( (n = write(stafd_g [ns], &(msg[nwrite]), len-nwrite)) >0 )
+		nwrite+=n;
+	if(n<0) {
+		char msgerror[1024];
+		sprintf(msgerror,"Stazione :  write() failed [err %d] ",errno);
+		perror(msgerror);
+		fflush(stdout);
+	}
+}
+
 /* ------------------------------------------------------------------------- */
 void mac2str (const char* mac,char* asc) {
 	int i,j;
@@ -12,16 +63,14 @@ void mac2str (const char* mac,char* asc) {
 	
 	u [2] = 0;	/* terminatore */
 	j = 0;
-	for (i=0;i<16;i++) {
-		if ((i==0) || (i==3) || (i==6) || (i==9) || (i==12) || (i==15)) {
-			/* Prendiamo due caratteri (un numero hex) ... */
-			u [0] = mac [i];
-			u [1] = mac [i+1];
-			/* ... li convertiamo prima in numero ... */
-			sscanf (u,"%x",&n);
-			/* ... e poi in ascii */
-			asc [j] = (char) n; j++;
-		}
+	for (i=0;i<16;i+=3) {
+		/* Prendiamo due caratteri (un numero hex) ... */
+		u [0] = mac [i];
+		u [1] = mac [i+1];
+		/* ... li convertiamo prima in numero ... */
+		sscanf (u,"%x",&n);
+		/* ... e poi in ascii */
+		asc [j] = (char) n; j++;
 	}
 }
 
@@ -55,6 +104,8 @@ void* main_sta_thread (void* nsp) {
 	/* Attendiamo un paio di secondi in modo da dare il tempo al mezzo condiviso 
 		di mettersi in ascolto. Dopodichè possiamo effettuare la connessione anche noi */
 	sleep (2);
+	
+	packet_test (ns);
 	
 	while (1) {
 		str2mac (stazione_g [ns].mac,mac);
