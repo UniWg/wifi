@@ -13,6 +13,8 @@ typedef struct sockaddr_in sain_t;
 /* Dimensione del buffer di scmabio mezzo - stazioni */
 #define _maxbuflen 2000
 #define _Cerror _CBIRed		/* Colore dei messaggi di errore */
+#define TRUE 1
+#define FALSE 0
 
 /* ------------------------------------------------------------------------- */
 /* Sezione per le variabili di DEBUG */

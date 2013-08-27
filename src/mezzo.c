@@ -73,6 +73,30 @@ void init_stato (stato_t *s) {
 
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
+* Descrizione	: restituisce true se il mac address passato in input corrisponde
+					al mac di una stazione
+* Par. Formali  : 
+			- mac : mac address nel formato 6 byte
+---------------------------------------------------------------------------- */
+char is_sta (char* mac) {
+	int i,j;
+	char valido;
+
+	for (i=0;i<_nsta;i++) {
+		valido = TRUE;
+		for (j=0;j<6;j++) {
+			if (stazione_g [i].mac [j] != mac [j])	{
+				valido = FALSE;
+				break;
+			}
+		}
+		if (valido)	return (TRUE);
+	}
+	return (FALSE);
+}
+
+/* ----------------------------------------------------------------------------
+* Nome			: carlo
 * Descrizione	: attende la connessione di tutte le stazioni
 * Par. Formali  : 
 			- stato : indirizzo della struttura che mantiene lo stato della select
@@ -143,28 +167,31 @@ void wait_for_sta_connection (stato_t *s) {
 							
 							nsta++;
 							printf (_Cmezzo ">>>>> Stazione %d di %d connessa\n" _CColor_Off,nsta,_nsta);
-							
-							
-/* SIAMO QUI 
-BISOGNA PRENDERE IL MESSAGGIO CHE ARRIVA DALLA STAZIONE
-SPACCHETTARLO E VEDERE SE IL MITTENTE HA IL MAC TRA QUELLI AMMESSI
-*/							
+						
+							/* Leggiamo il frame che ha spedito la stazione */
 							do {
 								n = recv (client_fd,(*s).clibuf [j].buf,_maxbuflen,0);
 							} while ((n<0) && (errno==EINTR));
 							
+							/* Se la richiesta non arriva da una delle nostre stazioni allora viene scartata */
 							f = get_frame_buffer ((*s).clibuf [j].buf);
-							str2mac ((*f).addr2,mac);
-
-							printf (_Cmezzo "mac mittente : %s\n" _CColor_Off,mac);							
+							if (is_sta ((*f).addr2)) {
+								str2mac ((*f).addr2,mac);
+								printf (_Cmezzo "mac mittente : %s\n" _CColor_Off,mac);		
+								/* ORA BISOGNA SPEDIRE INDIETRO ALLA STAZIONE LA CONFERMA E POI LA
+								FASE DI CONNESSIONE E' TERMINATA */
+								/* POSSIAMO SPEDIRE LA CONFERMA QUANDO SI SONO COLLEGATI TUTTI IN MODO
+								DA EVITARE DI RICEVERE PACCHETTI PRIMA DEL DOVUTO */					
+							}
+							else {
+								/* QUI BISOGNA CHIUDERE LA CONNESSIONE E METTERE 
+									(*s).clientfd [j] = -1
+								*/
+							}
 							fflush (stdout);
 							/* Usciamo quando non ci sono più richieste da gestire */
 							if (--numero_eventi <= 0)
 								break;
-						}
-						else {
-							printf (_Cerror "Mezzo Condiviso : tentata connessione su socket già impegnato\n" _CColor_Off);
-							exit (-1);
 						}
 					}
 				}
