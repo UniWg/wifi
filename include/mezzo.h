@@ -9,12 +9,6 @@
 #define _mac_mezzo "A1:B2:C3:D4:E5:F6"
 
 /* ------------------------------------------------------------------------- */
-/* --- Variabili globali --- */
-
-pthread_t mc_thread_g;	/* identificativo del thread del mezzo condiviso */
-int mezzofd_g;			/* fd del mezzo condiviso */
-
-/* ------------------------------------------------------------------------- */
 /* --- Strutture dati --- */
 
 typedef struct {
@@ -31,8 +25,16 @@ typedef struct {
 	int connfd;			/* fd del client che si è collegato */
 	int clientfd [FD_SETSIZE];	/* fd dei client connessi (sono le nostre stazioni) */
 	stabuf_t clibuf [FD_SETSIZE];	/* buffer dei client connessi */
+	char climac [FD_SETSIZE][6];	/* mac dei client connessi */
+	char nsta [FD_SETSIZE];			/* numero della stazione */
 	int mezzofd;		/* fd del mezzo condiviso */
 } stato_t;
+
+/* ------------------------------------------------------------------------- */
+/* --- Variabili globali --- */
+
+pthread_t mc_thread_g;		/* identificativo del thread del mezzo condiviso */
+int mezzofd_g;				/* fd del mezzo condiviso */
 
 /* ------------------------------------------------------------------------- */
 /* --- Prototipi delle funzioni --- */

@@ -97,17 +97,38 @@ char is_sta (char* mac) {
 
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
+* Descrizione	: dato il numero di stazione restituisce il relativo file descriptor (lato mezzo condiviso)
+* Par. Ritorno	: numero di descrittore (lato mezzo condiviso)
+* Par. Formali  : 
+			- sta : numero della stazione
+			- s : struttura dati contenente il riferimento numero stazione - descrittore
+---------------------------------------------------------------------------- */
+int nsta2fd (char sta,stato_t *s) {
+	int i;
+	
+	/* Le stazioni sono numerate da 1 a _nsta */
+	for (i=0;i<FD_SETSIZE;i++) {
+		if ((*s).nsta [i]== sta) {
+			return ((*s).clientfd [i]);
+		}
+	}
+	return (-1);
+}
+
+/* ----------------------------------------------------------------------------
+* Nome			: carlo
 * Descrizione	: attende la connessione di tutte le stazioni
 * Par. Formali  : 
 			- stato : indirizzo della struttura che mantiene lo stato della select
 ---------------------------------------------------------------------------- */
 void wait_for_sta_connection (stato_t *s) {
 	struct timeval t;
-	int numero_eventi,save_errno,i,j,client_fd,nsta,n;
+	int numero_eventi,save_errno,i,j,client_fd,nsta,n,len,nwrite;
 	socklen_t struct_len; 
 	sain_t client_addr;
 	pframe_t* f; 
 	char mac [18];
+	char* fb; 
 	
 	printf (_Cmezzo "------------------------------------------------------------------\n" _CColor_Off);
 	printf (_Cmezzo "Mezzo Condiviso : in attesa di connessioni da parte delle stazioni\n" _CColor_Off);
@@ -158,16 +179,6 @@ void wait_for_sta_connection (stato_t *s) {
 					for (j=0;j<FD_SETSIZE;j++) {
 						/* Salviamo i dati della stazione nella prima posizione libera dell'array */
 						if ((*s).clientfd [j] < 0) {
-							(*s).clientfd [j] = client_fd;
-							(*s).clibuf [j].len = 0;
-							(*s).clibuf [j].first = 0;
-							
-							/* Verifichiamo se aggiornare l'indice più alto da controllare */
-							if (j > (*s).fdtop)		(*s).fdtop = j;
-							
-							nsta++;
-							printf (_Cmezzo ">>>>> Stazione %d di %d connessa\n" _CColor_Off,nsta,_nsta);
-						
 							/* Leggiamo il frame che ha spedito la stazione */
 							do {
 								n = recv (client_fd,(*s).clibuf [j].buf,_maxbuflen,0);
@@ -177,11 +188,20 @@ void wait_for_sta_connection (stato_t *s) {
 							f = get_frame_buffer ((*s).clibuf [j].buf);
 							if (is_sta ((*f).addr2)) {
 								str2mac ((*f).addr2,mac);
-								printf (_Cmezzo "mac mittente : %s\n" _CColor_Off,mac);		
-								/* ORA BISOGNA SPEDIRE INDIETRO ALLA STAZIONE LA CONFERMA E POI LA
-								FASE DI CONNESSIONE E' TERMINATA */
-								/* POSSIAMO SPEDIRE LA CONFERMA QUANDO SI SONO COLLEGATI TUTTI IN MODO
-								DA EVITARE DI RICEVERE PACCHETTI PRIMA DEL DOVUTO */					
+								printf (_Cmezzo "mac mittente : %s\n" _CColor_Off,mac);	
+								
+								/* Memorizziamo i dati della stazione */
+								(*s).clientfd [j] = client_fd;
+								(*s).clibuf [j].len = 0;
+								(*s).clibuf [j].first = 0;
+								strncpy ((*s).climac [j],(*f).addr2,6);
+								(*s).nsta [j] = mac2nsta ((*f).addr2);
+							
+								/* Verifichiamo se aggiornare l'indice più alto da controllare */
+								if (j > (*s).fdtop)		(*s).fdtop = j;
+							
+								nsta++;
+								printf (_Cmezzo ">>>>> Stazione %d di %d connessa\n" _CColor_Off,nsta,_nsta);	
 							}
 							else {
 								/* QUI BISOGNA CHIUDERE LA CONNESSIONE E METTERE 
@@ -198,6 +218,43 @@ void wait_for_sta_connection (stato_t *s) {
 			}
 		}	
 	}
+	
+	/* Ora che tutte le stazioni si sono collegate, mandiamo il frame di risposta */
+	/* Impostiamo i campi del frame da spedire */
+	bzero (f,sizeof (pframe_t));
+	(*f).data = 0;		/* frame di controllo */
+	(*f).tods = 1;		/* destinato al mezzo condiviso */
+	(*f).scan = 2;		/* scansione - risposta. Collegamento avvenuto */
+	(*f).duration = 5;	
+	(*f).packetl = _pframe_other_len;			/* Lunghezza base del pacchetto (non ci sono dati) */
+	cpmac (_mac_mezzo,(*f).addr2);				/* mac address del mezzo */
+	(*f).crc = _crc_ok;
+
+	for (i=0;i<_nsta;i++) {
+		strncpy ((*f).addr1,stazione_g [i].mac,6);	/* mac address della stazione di destinazione */
+		/* Covertiamo la struttura in array di byte */
+		fb = set_frame_buffer (f);
+
+		/* Spedizione messaggio */
+		len = (*f).packetl;
+		nwrite=0;
+	
+		while( (n = write(nsta2fd (i+1,s), &(fb[nwrite]), len-nwrite)) >0 )
+			nwrite+=n;
+		if(n<0) {
+			char msgerror[1024];
+			sprintf(msgerror, _Cerror "Mezzo Condiviso :  write() failed [err %d] " _CColor_Off,errno);
+			perror(msgerror);
+			fflush(stdout);
+		}
+	}
+	
+	/* 
+	E' STATA SPEDITA LA RISPOSTA A TUTTE LE STAZIONI
+	ORA BISOGNA VERIFICARE SE LE STAZIONI L'HANNO RICEVUTA 
+	sE TUTTO È CORRETTO, ALLORA LE STAZIONI POSSONO COMINCIARE A TRASMETTERE
+	LE STAZIONI RIMANGONO IN ATTESA BLOCCANTE FINCHÈ NON HANNO RICEVUTO LA CONFERMA 
+	*/
 	
 	printf (_Cmezzo "\n------------------------------------------------------------------\n" _CColor_Off);
 }
