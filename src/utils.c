@@ -19,6 +19,7 @@ int chex2int (char c) {
 
 /* ------------------------------------------------------------------------- */
 void mac2str (const char* mac,char* asc) {
+	/* Da 18 a 6 */
 	int i,j;
 	char u [2];
 	
@@ -49,6 +50,7 @@ void ihex2str (unsigned char numero,char* s) {
 
 /* ------------------------------------------------------------------------- */
 void str2mac (char* asc,char* mac) {
+	/* Da 6 a 18 */
 	/* restituisce una stringa ben formata, quindi anche con il terminatore */
 	char d [6][3];
 	int i;

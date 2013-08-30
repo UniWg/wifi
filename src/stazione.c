@@ -8,11 +8,17 @@ const char _mac_stax [][17] = {_mac_sta1,_mac_sta2,_mac_sta3,_mac_sta4};
 /* ------------------------------------------------------------------------- */
 void packet_test (int ns) {
 	/* funzione di prova da CANCELLARE */
-	/* Ci colleghiamo al mezzo condiviso e gli spediamo un pacchetto */
+	
+	
+	/* Ci colleghiamo al mezzo condiviso, gli spediamo un pacchetto e attendiamo la risposta */
 	sain_t mezzo;
 	int ris,n, nwrite, len;
 	char* fb; 		/* Frame buffer (con campo dati a zero) */
+	char macm [6];		/* mac del mezzo condiviso in formato 6 byte */
+	char buf [_maxbuflen];
 	pframe_t f;
+	pframe_t* fs;
+	BOOL trovato;
 	
 	/* Apriamo il socket -- IPV4, TCP */
 	if ((stafd_g [ns] = socket (AF_INET,SOCK_STREAM,0))<0) {
@@ -24,8 +30,9 @@ void packet_test (int ns) {
 	
 	/* per completezza qui bisogna aggiungere la bind */
 	
+	
 	/* assign our destination address */
-	memset ( &mezzo, 0, sizeof(mezzo) );
+	memset ( &mezzo, 0, sizeof (mezzo) );
 	mezzo.sin_family = AF_INET;
 	mezzo.sin_addr.s_addr =	inet_addr (_indirizzoIP);
 	mezzo.sin_port = htons (_portaIP);
@@ -61,10 +68,33 @@ void packet_test (int ns) {
 		nwrite+=n;
 	if(n<0) {
 		char msgerror[1024];
-		sprintf(msgerror,"Stazione :  write() failed [err %d] ",errno);
+		sprintf(msgerror,_Cerror"Stazione :  write() failed [err %d] "_CColor_Off,errno);
 		perror(msgerror);
 		fflush(stdout);
 	}
+	
+	/* Ora rimaniamo in attesa bloccante di ricevere il frame di risposta */
+	trovato = FALSE;
+	do {
+		bzero (&buf,_maxbuflen);
+		do {
+			n = recv (stafd_g [ns],buf,_maxbuflen,0);
+		} while ((n<0) && (errno==EINTR));
+		/* Abbiamo ricevuto un frame */
+		/* Lo spacchettiamo e vediamo se è arrivato dal mezzo condiviso */
+		fs = get_frame_buffer (buf);
+		mac2str (_mac_mezzo,macm);
+		if (strncmp ((*fs).addr2,macm,6) != 0)
+			printf (_Csta "Stazione : Ricevuto un frame, ma non dal mezzo condiviso\n" _CColor_Off);
+		else {
+			/* Vediamo se è proprio il frame di risposta */
+			if ((*fs).scan == 2) {
+				printf (_Csta "Stazione %d : ricevuto frame di risposta. Pronta per comunicare\n" _CColor_Off,ns+1);
+				trovato = TRUE;
+			}
+			else	printf (_Csta "Stazione : Ricevuto un frame dal mezzo, ma senza il campo scan settato\n" _CColor_Off);
+		}
+	} while (!trovato);
 }
 
 /* ------------------------------------------------------------------------- */

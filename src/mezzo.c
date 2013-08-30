@@ -108,7 +108,7 @@ int nsta2fd (char sta,stato_t *s) {
 	
 	/* Le stazioni sono numerate da 1 a _nsta */
 	for (i=0;i<FD_SETSIZE;i++) {
-		if ((*s).nsta [i]== sta) {
+		if ((*s).nsta [i] == sta) {
 			return ((*s).clientfd [i]);
 		}
 	}
@@ -122,7 +122,7 @@ int nsta2fd (char sta,stato_t *s) {
 			- stato : indirizzo della struttura che mantiene lo stato della select
 ---------------------------------------------------------------------------- */
 void wait_for_sta_connection (stato_t *s) {
-	struct timeval t;
+	timev_t t;
 	int numero_eventi,save_errno,i,j,client_fd,nsta,n,len,nwrite;
 	socklen_t struct_len; 
 	sain_t client_addr;
@@ -249,14 +249,8 @@ void wait_for_sta_connection (stato_t *s) {
 		}
 	}
 	
-	/* 
-	E' STATA SPEDITA LA RISPOSTA A TUTTE LE STAZIONI
-	ORA BISOGNA VERIFICARE SE LE STAZIONI L'HANNO RICEVUTA 
-	sE TUTTO È CORRETTO, ALLORA LE STAZIONI POSSONO COMINCIARE A TRASMETTERE
-	LE STAZIONI RIMANGONO IN ATTESA BLOCCANTE FINCHÈ NON HANNO RICEVUTO LA CONFERMA 
-	*/
-	
-	printf (_Cmezzo "\n------------------------------------------------------------------\n" _CColor_Off);
+	printf (_Cmezzo "Ho spedito le risposte. Fase di connessione completata\n" _CColor_Off);
+	printf (_Cmezzo "------------------------------------------------------------------\n" _CColor_Off);
 }
 
 /* ----------------------------------------------------------------------------
@@ -266,10 +260,52 @@ void wait_for_sta_connection (stato_t *s) {
 			- s : indirizzo della struttura che mantiene lo stato della select
 ---------------------------------------------------------------------------- */
 void select_setup (stato_t *s) {
+	int i;
 	/* La select ha bisogno di essere riconfigurata completamente ad ogni ciclo */
 	FD_ZERO (&(*s).Rset);
 	FD_ZERO (&(*s).Wset);
 	FD_SET ((*s).mezzofd, &(*s).Rset);
+	/* Mettiamo in lettura e scrittura tutti i descrittori delle stazioni */
+	for (i=0;i<_nsta;i++) {
+		int fd = nsta2fd (i,s);
+		FD_SET (fd,&(*s).Rset);
+		FD_SET (fd,&(*s).Wset);
+	}
+}
+
+/* ------------------------------------------------------------------------- 
+* Nome			: carlo
+* Descrizione	: Ciclo principale del mezzo condiviso
+* Par. Ritorno  : NULL
+* Par. Formali  :
+			- s	: struttura di stato
+			- t : tempo di risveglio
+---------------------------------------------------------------------------- */
+void vita_mezzo (stato_t *s,timev_t *t) {
+	int numero_eventi,i;
+
+	/* ATTENZIONE: IN QUESTA SELECT IL CONTROLLO DI CONNESSIONE DI NUOVE STAZIONI
+			NON DOVRÀ PIÙ ESSERE FATTO */
+
+	do {
+		select_setup (s);
+		numero_eventi = select ((*s).fdtop+1,&(*s).Rset,&(*s).Wset,NULL,t);
+	} while ((numero_eventi<0) && (errno==EINTR));
+	
+	if (numero_eventi < 0) {
+		printf (_Cerror "Mezzo Condiviso : Errore nella select di attesa connessioni\n" _CColor_Off);
+		fflush (stderr);
+		exit (-1);
+	}
+
+	/* DOBBIAMO PORTARE IL MEZZO IN FASE 0
+	SPEDISCE AL DESTINATARIO I PACCHETTI CHE RICEVE
+	FARE UNA FUNZIONE A PARTE IN MODO DA POTER ANDARE AVANTI CON LO SVILUPPO */
+	
+	/* Controlliamo tutti gli eventi che si sono verificati */
+	for (i=0;i<numero_eventi;i++) {
+	/*	if (FD_ISSET ((*s).mezzofd,&(*s).Rset))*/
+	}
 }
 
 /* ------------------------------------------------------------------------- 
@@ -280,6 +316,7 @@ void select_setup (stato_t *s) {
 ---------------------------------------------------------------------------- */
 void* main_mc_thread (void* param) {
 	stato_t stato;
+	timev_t t;
 	
 	/* Inizializziamo il socket in modo che sia pronto ad accettare connessioni */
 	inizializza_socket ();
@@ -288,20 +325,11 @@ void* main_mc_thread (void* param) {
 	init_stato (&stato);
 	wait_for_sta_connection (&stato);
 	
-	
-	/*
-	  
-		NELLA SELECT GESTITA IN main_mc_thread IL CONTROLLO DI CONNESSIONE DI NUOVE
-		STAZIONI NON DOVRA' PIU' ESSERE FATTO 
-	*/
+	/* Impostiamo il timeout di 100msec */
+	t.tv_sec = 0; t.tv_usec = 100000;
+	/* Ciclo principale: vita del mezzo condiviso */
 	while (1) {
-		/* Ciclo di controllo della SELECT */
-		do {
-			select_setup (&stato);
-		} while (0);
-		
-		printf (_Cmezzo "MEZZO CONDIVISO\n" _CColor_Off);
-		sleep (1);
+		vita_mezzo (&stato,&t);
 	}
 	
 	return (0);

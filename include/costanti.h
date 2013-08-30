@@ -1,8 +1,15 @@
 #ifndef _COSTANTI_H
 #define _COSTANTI_H
 
+/* ------------------------------------------------------------------------- */
+/* Tipi */
+#define BOOL char
+#define TRUE 1
+#define FALSE 0
+
 typedef struct sockaddr sa_t;
 typedef struct sockaddr_in sain_t;
+typedef struct timeval timev_t;
 
 /* ------------------------------------------------------------------------- */
 /* Costanti */
@@ -13,8 +20,6 @@ typedef struct sockaddr_in sain_t;
 /* Dimensione del buffer di scmabio mezzo - stazioni */
 #define _maxbuflen 2000
 #define _Cerror _CBIRed		/* Colore dei messaggi di errore */
-#define TRUE 1
-#define FALSE 0
 
 /* ------------------------------------------------------------------------- */
 /* Sezione per le variabili di DEBUG */
