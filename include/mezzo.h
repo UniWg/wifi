@@ -1,6 +1,8 @@
 #ifndef _MEZZO_H
 #define _MEZZO_H
 
+#include "stazione.h"
+
 /* ------------------------------------------------------------------------- */
 /* --- Costanti --- */
 #define _max_connection 10	/* Numero massimo di connessioni contemporanee */
@@ -23,10 +25,9 @@ typedef struct {
 	fd_set Wset;		/* fd da controllare in scrittura */
 	int fdtop; 			/* fd da monitorare con valore più alto */
 	int connfd;			/* fd del client che si è collegato */
-	int clientfd [FD_SETSIZE];	/* fd dei client connessi (sono le nostre stazioni) */
-	stabuf_t clibuf [FD_SETSIZE];	/* buffer dei client connessi */
-	char climac [FD_SETSIZE][6];	/* mac dei client connessi */
-	char nsta [FD_SETSIZE];			/* numero della stazione */
+	int clientfd [_nsta];		/* fd dei client connessi (lato mezzo condiviso) */
+	stabuf_t clibuf [_nsta];	/* buffer dei client connessi */
+	char climac [_nsta][6];	/* mac dei client connessi */
 	int mezzofd;		/* fd del mezzo condiviso */
 } stato_t;
 

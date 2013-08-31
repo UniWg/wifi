@@ -34,7 +34,7 @@ void str2mac (char* asc,char* mac);
 			- mac : contiene il risultato della conversione
 ---------------------------------------------------------------------------- */
 
-char mac2nsta (char* mac);
+int mac2nsta (char* mac);
 /* ----------------------------------------------------------------------------
 * Nome			: 
 * Descrizione	: dato il mac restituisce il relativo numero di stazione

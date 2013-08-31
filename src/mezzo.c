@@ -97,33 +97,13 @@ char is_sta (char* mac) {
 
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
-* Descrizione	: dato il numero di stazione restituisce il relativo file descriptor (lato mezzo condiviso)
-* Par. Ritorno	: numero di descrittore (lato mezzo condiviso)
-* Par. Formali  : 
-			- sta : numero della stazione
-			- s : struttura dati contenente il riferimento numero stazione - descrittore
----------------------------------------------------------------------------- */
-int nsta2fd (char sta,stato_t *s) {
-	int i;
-	
-	/* Le stazioni sono numerate da 1 a _nsta */
-	for (i=0;i<FD_SETSIZE;i++) {
-		if ((*s).nsta [i] == sta) {
-			return ((*s).clientfd [i]);
-		}
-	}
-	return (-1);
-}
-
-/* ----------------------------------------------------------------------------
-* Nome			: carlo
 * Descrizione	: attende la connessione di tutte le stazioni
 * Par. Formali  : 
 			- stato : indirizzo della struttura che mantiene lo stato della select
 ---------------------------------------------------------------------------- */
 void wait_for_sta_connection (stato_t *s) {
 	timev_t t;
-	int numero_eventi,save_errno,i,j,client_fd,nsta,n,len,nwrite;
+	int numero_eventi,nev,save_errno,i,j,client_fd,nsta,n,len,nwrite;
 	socklen_t struct_len; 
 	sain_t client_addr;
 	pframe_t* f; 
@@ -158,7 +138,8 @@ void wait_for_sta_connection (stato_t *s) {
 		}
 		
 		/* Controlliamo tutti gli eventi che si sono verificati */
-		for (i=0;i<numero_eventi;i++) {
+		nev = numero_eventi;
+		for (i=0;i<nev;i++) {
 			DEBUG_MC "MC: tentativo di connessione di una stazione\n" END_MC
 			/* Controllo se il socket del server (sul quale sta ascoltando)
 				è stato settato in lettura dalla listen */
@@ -175,39 +156,35 @@ void wait_for_sta_connection (stato_t *s) {
 				}
 				else {
 					/* Abbiamo una nuova connessione */
-					/* Scandiamo il vettore alla ricerca del primo descrittore settato */
-					for (j=0;j<FD_SETSIZE;j++) {
-						/* Salviamo i dati della stazione nella prima posizione libera dell'array */
-						if ((*s).clientfd [j] < 0) {
-							/* Leggiamo il frame che ha spedito la stazione */
-							do {
-								n = recv (client_fd,(*s).clibuf [j].buf,_maxbuflen,0);
-							} while ((n<0) && (errno==EINTR));
+					for (;;) {
+						/* Leggiamo il frame che ha spedito la stazione */
+						/* Utilizziamo sempre il buffer 0. Ci serve solo d'appoggio */
+						do {
+							n = recv (client_fd,(*s).clibuf [0].buf,_maxbuflen,0);
+						} while ((n<0) && (errno==EINTR));
+						
+						/* Se la richiesta non arriva da una delle nostre stazioni allora viene scartata */
+						f = get_frame_buffer ((*s).clibuf [0].buf);
+						if (is_sta ((*f).addr2)) {
+							/* Ricaviamo l'indice della stazione in modo da essere allineati con 
+								gli array della nostra struttura */
+							j = mac2nsta ((*f).addr2)-1;	
 							
-							/* Se la richiesta non arriva da una delle nostre stazioni allora viene scartata */
-							f = get_frame_buffer ((*s).clibuf [j].buf);
-							if (is_sta ((*f).addr2)) {
-								str2mac ((*f).addr2,mac);
-								printf (_Cmezzo "mac mittente : %s\n" _CColor_Off,mac);	
-								
-								/* Memorizziamo i dati della stazione */
-								(*s).clientfd [j] = client_fd;
-								(*s).clibuf [j].len = 0;
-								(*s).clibuf [j].first = 0;
-								strncpy ((*s).climac [j],(*f).addr2,6);
-								(*s).nsta [j] = mac2nsta ((*f).addr2);
+							str2mac ((*f).addr2,mac);
+							printf (_Cmezzo "mac mittente %d : %s\n" _CColor_Off,j,mac);	
 							
-								/* Verifichiamo se aggiornare l'indice più alto da controllare */
-								if (j > (*s).fdtop)		(*s).fdtop = j;
-							
-								nsta++;
-								printf (_Cmezzo ">>>>> Stazione %d di %d connessa\n" _CColor_Off,nsta,_nsta);	
-							}
-							else {
-								/* QUI BISOGNA CHIUDERE LA CONNESSIONE E METTERE 
-									(*s).clientfd [j] = -1
-								*/
-							}
+							/* Memorizziamo i dati della stazione */
+							(*s).clientfd [j] = client_fd;
+							(*s).clibuf [j].len = 0;
+							(*s).clibuf [j].first = 0;
+							strncpy ((*s).climac [j],(*f).addr2,6);
+						
+							/* Verifichiamo se aggiornare l'indice più alto da controllare */
+							if (client_fd > (*s).fdtop)		(*s).fdtop = client_fd;
+						
+							nsta++;
+							printf (_Cmezzo ">>>>> Stazione %d di %d connessa\n" _CColor_Off,nsta,_nsta);	
+
 							fflush (stdout);
 							/* Usciamo quando non ci sono più richieste da gestire */
 							if (--numero_eventi <= 0)
@@ -238,8 +215,7 @@ void wait_for_sta_connection (stato_t *s) {
 		/* Spedizione messaggio */
 		len = (*f).packetl;
 		nwrite=0;
-	
-		while( (n = write(nsta2fd (i+1,s), &(fb[nwrite]), len-nwrite)) >0 )
+		while( (n = write((*s).clientfd [i], &(fb[nwrite]), len-nwrite)) >0 )
 			nwrite+=n;
 		if(n<0) {
 			char msgerror[1024];
@@ -267,7 +243,7 @@ void select_setup (stato_t *s) {
 	FD_SET ((*s).mezzofd, &(*s).Rset);
 	/* Mettiamo in lettura e scrittura tutti i descrittori delle stazioni */
 	for (i=0;i<_nsta;i++) {
-		int fd = nsta2fd (i,s);
+		int fd = (*s).clientfd [i];
 		FD_SET (fd,&(*s).Rset);
 		FD_SET (fd,&(*s).Wset);
 	}
@@ -282,10 +258,7 @@ void select_setup (stato_t *s) {
 			- t : tempo di risveglio
 ---------------------------------------------------------------------------- */
 void vita_mezzo (stato_t *s,timev_t *t) {
-	int numero_eventi,i;
-
-	/* ATTENZIONE: IN QUESTA SELECT IL CONTROLLO DI CONNESSIONE DI NUOVE STAZIONI
-			NON DOVRÀ PIÙ ESSERE FATTO */
+	int numero_eventi,i,j;
 
 	do {
 		select_setup (s);
@@ -297,14 +270,15 @@ void vita_mezzo (stato_t *s,timev_t *t) {
 		fflush (stderr);
 		exit (-1);
 	}
-
-	/* DOBBIAMO PORTARE IL MEZZO IN FASE 0
-	SPEDISCE AL DESTINATARIO I PACCHETTI CHE RICEVE
-	FARE UNA FUNZIONE A PARTE IN MODO DA POTER ANDARE AVANTI CON LO SVILUPPO */
 	
 	/* Controlliamo tutti gli eventi che si sono verificati */
 	for (i=0;i<numero_eventi;i++) {
-	/*	if (FD_ISSET ((*s).mezzofd,&(*s).Rset))*/
+		/* Controlliamo quali descrittori sono settati */
+		for (j=0;j<_nsta;j++) {
+			if (FD_ISSET ((*s).clientfd [j],&(*s).Rset)) {
+				printf ("richiesta da client %d\n",j);
+			}
+		}
 	}
 }
 

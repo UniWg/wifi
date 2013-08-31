@@ -123,6 +123,15 @@ void* main_sta_thread (void* nsp) {
 	
 	packet_test (ns);
 	
+	/* TEST spedizione */
+	if (ns == 1) {
+		sleep (2);
+		
+		write(stafd_g [ns],"GEPPETTO",8);
+		
+	}
+	/* FINE TEST */
+	
 	while (1) {
 		str2mac (stazione_g [ns].mac,mac);
 		printf ("Stazione %d -- MAC: %s\n",ns+1,mac);

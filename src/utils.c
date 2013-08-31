@@ -59,8 +59,8 @@ void str2mac (char* asc,char* mac) {
 	snprintf (mac,18,"%s:%s:%s:%s:%s:%s",d[0],d[1],d[2],d[3],d[4],d[5]);
 }
 /* ------------------------------------------------------------------------- */
-char mac2nsta (char* mac) {
-	char n = -1;
+int mac2nsta (char* mac) {
+	int n = -1;
 	int i;
 	
 	for (i=0;i<_nsta;i++) {
