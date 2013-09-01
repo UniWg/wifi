@@ -114,27 +114,74 @@ void inizializza_stazioni (void) {
 
 /* ------------------------------------------------------------------------- */
 void* main_sta_thread (void* nsp) {
-	int ns = *(int*)nsp-1;	/* togliamo 1 così ns è allineato con l'indice dell'array */
+	int len,n,nwrite,ns = *(int*)nsp-1;	/* togliamo 1 così ns è allineato con l'indice dell'array */
 	char mac [18];
+	pframe_t f;
+	pframe_t* pf;
+	char* fb;
+	char* messaggio_test = "Messaggio di test";
+	char buf [_max_frame_buffer_size];
 	
 	/* Attendiamo un paio di secondi in modo da dare il tempo al mezzo condiviso 
 		di mettersi in ascolto. Dopodichè possiamo effettuare la connessione anche noi */
 	sleep (2);
 	
+	
+	
+	
+	
+	/* TEST spedizione -- da CANCELLARE ################################### */
 	packet_test (ns);
 	
-	/* TEST spedizione */
 	if (ns == 1) {
-		sleep (2);
+		sleep (1);
+		bzero (&f,sizeof (f));
+		f.data = 1;		/* pacchetto dati */
+		f.tods = 0;		/* destinato ad una stazione */
+		f.scan = 0;		/* siamo già collegati, quindi non richiediamo nessuna scansione */
+		f.duration = 5;		/* Per il test la durata la lasciamo a 5. Dovrà poi essere calcolata in base
+								al tipo e alla lunghezza del frame */
+		f.packetl = _pframe_other_len + strlen (messaggio_test);	/* Lunghezza totale del pacchetto (base + dati) */
+		cpmac (_mac_sta4,f.addr1);					/* mac address del destinatario */
+		strncpy (f.addr2,stazione_g [ns].mac,6);	/* mac address della stazione che sta trasmettendo */
+		f.buf = messaggio_test;
+		f.crc = _crc_ok;
+
+		/* Covertiamo la struttura in array di byte */
+		fb = set_frame_buffer ((pframe_t*)&f);
+
+		/* Spedizione messaggio */
+		len = f.packetl;
+		nwrite=0;
+	
+		while( (n = write(stafd_g [ns], &(fb[nwrite]), len-nwrite)) >0 )
+			nwrite+=n;
 		
-		write(stafd_g [ns],"GEPPETTO",8);
-		
-	}
-	/* FINE TEST */
+	} else sleep (3);
+	
+	/* Leggiamo il pacchetto arrivato 
+		lettura e scrittura dovreanno essere gestite con una select */
+	
+	do {
+		n = recv (stafd_g [ns],buf,_max_frame_buffer_size,0);
+	} while ((n<0) && (errno==EINTR));
+	
+	/* Spacchettiamo e vediamo se è destinato a noi */
+	pf = get_frame_buffer (buf);
+	
+	if (mac2nsta ((*pf).addr1) == (ns + 1)) 
+		printf (_Csta "Stazione %d -- ricevuto messaggio : %s\n" _CColor_Off,ns+1,(*pf).buf);
+	
+	
+	/* FINE TEST ########################################################## */
+	
+	
+	
+	
 	
 	while (1) {
 		str2mac (stazione_g [ns].mac,mac);
-		printf ("Stazione %d -- MAC: %s\n",ns+1,mac);
+		printf (_Csta "Stazione %d -- MAC: %s\n" _CColor_Off,ns+1,mac);
 		sleep (ns+1);
 	}
 	

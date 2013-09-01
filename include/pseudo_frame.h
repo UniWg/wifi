@@ -54,7 +54,7 @@
 #define _crc_ok 1	/* valore di default del CRC. Indica che il pacchetto non è corrotto */
 
 /* ------------------------------------------------------------------------- */
-/* Struttura dati d'appoggio */
+/* Strutture dati */
 
 /*  la dimensione del buffer (buf) viene calcolata automaticamente come differenza
 	tra la lunghezza del pacchetto e tutto ciò che non è campo dati (_pframe_other_len) */

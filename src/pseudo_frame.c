@@ -31,6 +31,8 @@ char* set_frame_buffer (pframe_t* pf) {
 	char* pi;
 	int i,vi;
 	
+	bzero (buf,(*pf).packetl);
+	
 	*(buf+0) = (*pf).data;
 	*(buf+1) = (*pf).dtype;
 	*(buf+2) = (*pf).tods;
@@ -72,6 +74,8 @@ pframe_t* get_frame_buffer (char* buf) {
 	pframe_t *pf = (pframe_t*) malloc (sizeof (pframe_t));	
 	int i,plen,vi;
 	char* pi;
+	
+	bzero (pf,sizeof (pframe_t));
 	
 	(*pf).data = *(buf+0);
 	(*pf).dtype = *(buf+1);

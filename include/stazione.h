@@ -8,19 +8,18 @@
 #define _nsta 4
 #define _Csta _CGreen		/* Colore dei messaggi delle stazioni */
 
-/* valori per la mappa di bit dfa combinare con _sta_di_sta (campo "campo" di station_t) */
+/* valori per la mappa di bit da combinare con _sta_di_sta (campo "campo" di station_t) */
 #define _campo_sta1 1
 #define _campo_sta2 2
 #define _campo_sta3 4
 #define _campo_sta4 8
 extern const int _campo_stax [];
 
-/* definizione delle stazioni raggiungibili */
-/* ogni stazione viene esclusa dalla sua lista */
-#define _sta_di_sta1 0x0A	/* 1010  ( 4321 )*/
-#define _sta_di_sta2 0x09	/* 1001 */
-#define _sta_di_sta3 0x08	/* 1000 */ 
-#define _sta_di_sta4 0x07	/* 0111 */
+/* definizione delle stazioni raggiungibili (compresa la stazione stessa) */
+#define _sta_di_sta1 0x0B	/* 1011  ( 4321 )*/
+#define _sta_di_sta2 0x0B	/* 1011 */
+#define _sta_di_sta3 0x0C	/* 1100 */ 
+#define _sta_di_sta4 0x0F	/* 1111 */
 extern const int _sta_di_stax [];
 
 /* definizione dei mac address (valori casuali) */

@@ -163,6 +163,13 @@ void wait_for_sta_connection (stato_t *s) {
 							n = recv (client_fd,(*s).clibuf [0].buf,_maxbuflen,0);
 						} while ((n<0) && (errno==EINTR));
 						
+						if(n<0) {
+							char msgerror[1024];
+							sprintf (msgerror, _Cerror "Mezzo Condiviso (fase di connessione):  read() failed [err %d] " _CColor_Off,errno);
+							perror(msgerror);
+							fflush(stdout);
+						}
+						
 						/* Se la richiesta non arriva da una delle nostre stazioni allora viene scartata */
 						f = get_frame_buffer ((*s).clibuf [0].buf);
 						if (is_sta ((*f).addr2)) {
@@ -258,7 +265,9 @@ void select_setup (stato_t *s) {
 			- t : tempo di risveglio
 ---------------------------------------------------------------------------- */
 void vita_mezzo (stato_t *s,timev_t *t) {
-	int numero_eventi,i,j;
+	int numero_eventi,i,j,k,n,len,nwrite;
+	pframe_t* f;
+	char mac [18];
 
 	do {
 		select_setup (s);
@@ -276,7 +285,26 @@ void vita_mezzo (stato_t *s,timev_t *t) {
 		/* Controlliamo quali descrittori sono settati */
 		for (j=0;j<_nsta;j++) {
 			if (FD_ISSET ((*s).clientfd [j],&(*s).Rset)) {
-				printf ("richiesta da client %d\n",j);
+				/* Leggo il frame ... */
+				do {
+					n = recv ((*s).clientfd [j],(*s).clibuf [j].buf,_maxbuflen,0);
+				} while ((n<0) && (errno==EINTR));
+				/* ... poi lo spacchetto per ottenere il mac del mittente e destinatario */
+				f = get_frame_buffer ((*s).clibuf [j].buf);
+				str2mac ((*f).addr2,mac);	/* mac mittente */
+				printf (_Cmezzo "Stazione %s: ricevuto messaggio <%s>\n" _CColor_Off,mac,(*f).buf);
+				
+				/* Ora giriamo il frame a tutte le stazioni che si trovano nel campo del mittente */
+				for (k=0;k<_nsta;k++) {
+					/* and logico tra il numero della stazione e la configurazione del campo di visibilità del mittente */
+					if (_campo_stax [k] & _sta_di_stax [j]) {
+						len = (*f).packetl;
+						nwrite=0;
+						while( (n = write((*s).clientfd [k], &(*s).clibuf [j].buf [nwrite], len-nwrite)) >0 )
+							nwrite+=n;
+						printf (_Cmezzo "Spedito messaggio a stazione %d\n" _CColor_Off,k+1);
+					}
+				}
 			}
 		}
 	}
