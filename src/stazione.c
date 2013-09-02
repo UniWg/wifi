@@ -1,5 +1,6 @@
 #include "general_include.h"
 
+const int _area_stax [] = {_area_sta1,_area_sta2,_area_sta3,_area_sta4};
 const int _campo_stax [] = {_campo_sta1,_campo_sta2,_campo_sta3,_campo_sta4};
 const int _sta_di_stax [] = {_sta_di_sta1,_sta_di_sta2,_sta_di_sta3,_sta_di_sta4};
 const char _mac_stax [][17] = {_mac_sta1,_mac_sta2,_mac_sta3,_mac_sta4};
@@ -107,6 +108,7 @@ void inizializza_stazioni (void) {
 		stazione_g [i].indice = i+1;
 		mac2str (_mac_stax [i],stazione_g [i].mac);	
 		stazione_g [i].campo = _sta_di_stax [i];
+		stazione_g [i].area = _area_stax [i];
 	}
 
 	free (mac);
@@ -154,7 +156,7 @@ void* main_sta_thread (void* nsp) {
 		len = f.packetl;
 		nwrite=0;
 	
-		while( (n = write(stafd_g [ns], &(fb[nwrite]), len-nwrite)) >0 )
+	while( (n = write(stafd_g [ns], &(fb[nwrite]), len-nwrite)) >0 )
 			nwrite+=n;
 		
 	} else sleep (3);
@@ -165,7 +167,7 @@ void* main_sta_thread (void* nsp) {
 	do {
 		n = recv (stafd_g [ns],buf,_max_frame_buffer_size,0);
 	} while ((n<0) && (errno==EINTR));
-	
+
 	/* Spacchettiamo e vediamo se è destinato a noi */
 	pf = get_frame_buffer (buf);
 	

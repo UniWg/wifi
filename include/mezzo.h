@@ -27,6 +27,7 @@ typedef struct {
 	int connfd;			/* fd del client che si è collegato */
 	int clientfd [_nsta];		/* fd dei client connessi (lato mezzo condiviso) */
 	stabuf_t clibuf [_nsta];	/* buffer dei client connessi */
+	timev_t timestamp [_nsta];	/* tempo di arrivo del pacchetto */
 	char climac [_nsta][6];	/* mac dei client connessi */
 	int mezzofd;		/* fd del mezzo condiviso */
 } stato_t;

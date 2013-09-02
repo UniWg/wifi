@@ -8,6 +8,13 @@
 #define _nsta 4
 #define _Csta _CGreen		/* Colore dei messaggi delle stazioni */
 
+/* Aree di visibilità delle stazioni */
+#define _area_sta1 0x01		/* 01  (21) */
+#define _area_sta2 0x01		/* 01 */
+#define _area_sta3 0x02		/* 10 */
+#define _area_sta4 0x03		/* 11 */ 	
+extern const int _area_stax [];
+
 /* valori per la mappa di bit da combinare con _sta_di_sta (campo "campo" di station_t) */
 #define _campo_sta1 1
 #define _campo_sta2 2
@@ -37,6 +44,7 @@ extern const char _mac_stax [][17];
  	char indice;	/* numero della stazione 1..4 */
  	char mac [6];	/* mac address */
  	char campo;		/* mappa di bit che identifica le stazioni raggiungibili */
+ 	char area;		/* area di visibilità elettromagnetica */
  } station_t;
  
 /* ------------------------------------------------------------------------- */

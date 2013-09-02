@@ -252,7 +252,7 @@ void select_setup (stato_t *s) {
 	for (i=0;i<_nsta;i++) {
 		int fd = (*s).clientfd [i];
 		FD_SET (fd,&(*s).Rset);
-		FD_SET (fd,&(*s).Wset);
+		/*FD_SET (fd,&(*s).Wset);*/
 	}
 }
 
@@ -265,6 +265,39 @@ void select_setup (stato_t *s) {
 			- t : tempo di risveglio
 ---------------------------------------------------------------------------- */
 void vita_mezzo (stato_t *s,timev_t *t) {
+	int numero_eventi,j,n;
+
+	do {
+		select_setup (s);
+		numero_eventi = select ((*s).fdtop+1,&(*s).Rset,&(*s).Wset,NULL,t);
+	} while ((numero_eventi<0) && (errno==EINTR));
+	
+	if (numero_eventi < 0) {
+		printf (_Cerror "Mezzo Condiviso : Errore nella select di attesa connessioni\n" _CColor_Off);
+		fflush (stderr);
+		exit (-1);
+	}
+	
+	if (numero_eventi == 0) {
+		/* E' scaduto il timeout */
+	}	
+	else {
+		/* Controlliamo quali descrittori sono settati */
+		for (j=0;j<_nsta;j++) {
+			if (FD_ISSET ((*s).clientfd [j],&(*s).Rset)) {
+				/* Leggo il frame ... */
+				do {
+					n = recv ((*s).clientfd [j],(*s).clibuf [j].buf,_maxbuflen,0);
+				} while ((n<0) && (errno==EINTR));
+			} 
+		}
+	}
+}
+
+/* ------------------------------------------------------------------------- */
+/* ######################################################################### */
+
+void vita_mezzo_0 (stato_t *s,timev_t *t) {
 	int numero_eventi,i,j,k,n,len,nwrite;
 	pframe_t* f;
 	char mac [18];
@@ -297,6 +330,7 @@ void vita_mezzo (stato_t *s,timev_t *t) {
 				/* Ora giriamo il frame a tutte le stazioni che si trovano nel campo del mittente */
 				for (k=0;k<_nsta;k++) {
 					/* and logico tra il numero della stazione e la configurazione del campo di visibilità del mittente */
+					/* in pratica serve per estrarre le stazioni raggiungibili */
 					if (_campo_stax [k] & _sta_di_stax [j]) {
 						len = (*f).packetl;
 						nwrite=0;
@@ -331,7 +365,7 @@ void* main_mc_thread (void* param) {
 	t.tv_sec = 0; t.tv_usec = 100000;
 	/* Ciclo principale: vita del mezzo condiviso */
 	while (1) {
-		vita_mezzo (&stato,&t);
+		vita_mezzo_0 (&stato,&t);
 	}
 	
 	return (0);
