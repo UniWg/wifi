@@ -17,6 +17,8 @@ typedef struct {
 	char buf [_maxbuflen];
 	int first;				/* Indice del primo byte da gestire */
 	int len;				/* Numero di caratteri da gestire */
+	timev_t timestamp;		/* tempo di spedizione del pacchetto (tempo di arrivo + latenza) */
+	char stamacdest [6];		/* mac del destinatario */
 } stabuf_t;
 
 typedef struct {
@@ -26,9 +28,8 @@ typedef struct {
 	int fdtop; 			/* fd da monitorare con valore più alto */
 	int connfd;			/* fd del client che si è collegato */
 	int clientfd [_nsta];		/* fd dei client connessi (lato mezzo condiviso) */
+	char climac [_nsta][6];		/* mac dei client connessi */
 	stabuf_t clibuf [_nsta];	/* buffer dei client connessi */
-	timev_t timestamp [_nsta];	/* tempo di arrivo del pacchetto */
-	char climac [_nsta][6];	/* mac dei client connessi */
 	int mezzofd;		/* fd del mezzo condiviso */
 } stato_t;
 

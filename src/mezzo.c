@@ -63,8 +63,10 @@ void init_stato (stato_t *s) {
 	FD_ZERO (&(*s).Wset);
 	(*s).fdtop = mezzofd_g;
 	(*s).connfd = -1;
-	for (i=0; i<FD_SETSIZE; i++) {		/* FD_SETSIZE = 1024 (a noi ne bastano 4) */
+	for (i=0; i<_nsta; i++) {		
 		(*s).clientfd [i] = -1;			/* fd disponibile */
+		(*s).clibuf [i].first = 0;		/* buffer di ricezione vuoto */	
+		(*s).clibuf [i].len = 0;
 	}
 	/* Anche se mezzofd è accessibile a livello globale lo memorizziamo
 		in modo da avere tutte le informazioni nella struttura */
@@ -280,6 +282,13 @@ void vita_mezzo (stato_t *s,timev_t *t) {
 	
 	if (numero_eventi == 0) {
 		/* E' scaduto il timeout */
+		if (stesso_dest (s) > 0) {
+			/* Abbiamo più frame per lo stesso destinatario. Dobbiamo gestire l'anomalia */
+			
+		}
+		else if (out_of_time (s) > 0) {
+			/* OUT_OF_TIME DA FINIRE */
+		}
 	}	
 	else {
 		/* Controlliamo quali descrittori sono settati */
