@@ -339,7 +339,7 @@ void vita_mezzo_0 (stato_t *s,timev_t *t) {
 				/* Ora giriamo il frame a tutte le stazioni che si trovano nel campo del mittente */
 				for (k=0;k<_nsta;k++) {
 					/* and logico tra il numero della stazione e la configurazione del campo di visibilità del mittente */
-					/* in pratica serve per estrarre le stazioni raggiungibili */
+					/* in pratica serve per dedurre le stazioni raggiungibili */
 					if (_campo_stax [k] & _sta_di_stax [j]) {
 						len = (*f).packetl;
 						nwrite=0;

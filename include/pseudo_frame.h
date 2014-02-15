@@ -46,7 +46,8 @@
 #define _pframe_other_len 39
 /* dimensione massima in byte del frame buffer */
 #define	_max_frame_buffer_size _pframe_data_len+_pframe_other_len
-/* indice iniziale di Addr1, seqctrl, payload all'interno del frame buffer */
+/* indice iniziale di Packet len, Addr1, seqctrl, payload all'interno del frame buffer */
+#define _pack_len 8
 #define _addr1_pos 10
 #define _seqctrl_pos 34
 #define _payload_pos 38
@@ -104,6 +105,16 @@ void remove_pframe (pframe_t* pf);
 * Descrizione	: dealloca una struttura di tipo pframe
 * Par. Formali  :
 			- pf : indirizzo della struttura da deallocare
+---------------------------------------------------------------------------- */
+
+char complete_frame (int n,char* buf);
+/* ----------------------------------------------------------------------------
+* Nome			: carlo
+* Descrizione	: verifica se il pacchetto è stato ricevuto completo
+* Par. Ritorno  : restituisce TRUE se il pacchetto è completo
+* Par. Formali  :
+			- n : numero di byte attualmente ricevuti
+			- buf : buffer del pacchetto
 ---------------------------------------------------------------------------- */
 
 #endif

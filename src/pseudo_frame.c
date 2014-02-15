@@ -69,6 +69,19 @@ char* set_frame_buffer (pframe_t* pf) {
 }
 
 /* ------------------------------------------------------------------------- */
+/* Restituisce il valore del campo Packet Lenght */
+int get_packet_len (char* buf) {
+	int vi;
+	char* pi;
+	
+	vi = 0;
+	pi = (char *) &vi;
+	*(pi+1) = *(buf+8); 
+	*(pi+0) = *(buf+9);
+	return (vi);
+}
+
+/* ------------------------------------------------------------------------- */
 
 pframe_t* get_frame_buffer (char* buf) {
 	pframe_t *pf = (pframe_t*) malloc (sizeof (pframe_t));	
@@ -85,12 +98,7 @@ pframe_t* get_frame_buffer (char* buf) {
 	(*pf).cts = *(buf+5);
 	(*pf).scan = *(buf+6);
 	(*pf).duration = *(buf+7);
-	
-	vi = 0;
-	pi = (char *) &vi;
-	*(pi+1) = *(buf+8); 
-	*(pi+0) = *(buf+9);
-	(*pf).packetl = vi;
+	(*pf).packetl = get_packet_len (buf);
 	
 	get_addr (1,buf,(*pf).addr1);
 	get_addr (2,buf,(*pf).addr2);
@@ -127,6 +135,26 @@ void remove_frame_buffer (char* buffer) {
 
 void remove_pframe (pframe_t* pf) {
 	free (pf);
+}
+
+/* ------------------------------------------------------------------------- */
+/* 
+	Per verificare se un pacchetto è completo bisogna fare le seguenti valutazioni:
+	Se il numero di byte ricevuti è inferiore alla lunghezza minima (_pframe_other_len)
+	allora il pacchetto è sicuramente incompleto.
+	Se è uguale o superiore alla lunghezza minima, allora bisogna andare a vedere 
+	se il valore di _pack_len corrisponde con la lunghezza totale
+*/
+
+char complete_frame (int n,char* buf) {
+	if (n<_pframe_other_len)
+		return (FALSE); 	/* La dimensione è inferiore alla minima */
+
+	if (get_packet_len (buf) == n)
+		return (TRUE);
+	else
+		return (FALSE);
+	
 }
 
 /* ------------------------------------------------------------------------- */

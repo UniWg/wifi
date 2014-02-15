@@ -21,6 +21,7 @@
 #include "pseudo_frame.h"
 #include "read_write.h"
 #include "stazione.h"
+#include "stazione_sub.h"
 #include "utils.h"
 
 #endif

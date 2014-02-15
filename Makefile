@@ -29,12 +29,15 @@ read_write: ${DIR_SRC}/read_write.c
 stazione: ${DIR_SRC}/stazione.c
 	gcc -o ${DIR_OBJ}/stazione.o -I ${DIR_HDR} -c ${GCCFLAGS} ${DIR_SRC}/stazione.c
 	
+stazione_sub: ${DIR_SRC}/stazione_sub.c
+	gcc -o ${DIR_OBJ}/stazione_sub.o -I ${DIR_HDR} -c ${GCCFLAGS} ${DIR_SRC}/stazione_sub.c
+	
 utils: ${DIR_SRC}/utils.c
 	gcc -o ${DIR_OBJ}/utils.o -I ${DIR_HDR} -c ${GCCFLAGS} ${DIR_SRC}/utils.c
 
 # Linker
 
-wifi.bin:	applica main mezzo mezzo_sub pseudo_frame read_write stazione utils
+wifi.bin:	applica main mezzo mezzo_sub pseudo_frame read_write stazione stazione_sub utils
 	gcc -o wifi.bin ${LINKERFLAGS} ${DIR_OBJ}/*.o
 
 # Cancellazione dei file di compilazione
