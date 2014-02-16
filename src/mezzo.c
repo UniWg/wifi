@@ -267,7 +267,7 @@ void select_setup (stato_t *s) {
 			- t : tempo di risveglio
 ---------------------------------------------------------------------------- */
 void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
-	int numero_eventi;
+	int numero_eventi,area_attiva;
 	pframe_t* f;
 	char pack [_max_frame_buffer_size];
 
@@ -289,8 +289,8 @@ void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
 		/* ... e lo spacchettiamo */
 		f = get_frame_buffer (pack);
 		if (area_libera (f,aree) == TRUE) {
-			occupa_area (f,aree,pack);				/* occupiamo l'area per il tempo indicato in duration */
-			metti_pacchetto_nel_buffer (pack,f); 	/* Mettiamo il pacchetto nel buffer della sua area */
+			/* occupiamo l'area per il tempo indicato in duration e mettiamo il pacchetto nell'area */
+			occupa_area (f,aree,pack);				
 		}
 		else {
 			/* l'area non è libera. Il pacchetto arrivato ha generato una collisione */
@@ -302,9 +302,10 @@ void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
 	} 
 	/* #### SCADUTO TIMEOUT DELLA SELECT (100ms) ################################## */
 	else {
-		if (buffer_pieno () == TRUE) {
-			/* Prendiamo il pacchetto (senza eliminarlo) ... */
-			prendi_pacchetto_dal_buffer (pack);
+		/* Vediamo se c'è almeno un pacchetto nelle aree */
+		if (pacchetto_in_area (aree) == TRUE) {			
+			/* Prendiamo il pacchetto (senza eliminarlo dal buffer dell'area) ... */
+			area_attiva = prendi_pacchetto_dal_buffer (pack);
 			/* ... e lo spacchettiamo */
 			f = get_frame_buffer (pack);
 			if (genera_errore_casuale () == TRUE) {
@@ -321,10 +322,12 @@ void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
 					libera_area (NULL);
 				}
 				else {
-					/* Spedisci il pacchetto e toglilo dal buffer */
-					spedisci_pacchetto (pack,f);
-					elimina_pacchetto_dal_buffer (f);
-					libera_area (f);
+					if (scaduto_timer (area_attiva,aree) == TRUE) {
+						/* Spedisci il pacchetto e toglilo dal buffer */
+						spedisci_pacchetto (pack,f);
+						elimina_pacchetto_dal_buffer (f);
+						libera_area (f);
+					}
 				}
 			}
 		} 
@@ -409,7 +412,6 @@ void* main_mc_thread (void* param) {
 	
 	/* Resettiamo le aree */
 	for (i=0;i<_n_area;i++) {
-		aree [i].size = 0;
 		aree [i].durata = 0;
 	}
 	

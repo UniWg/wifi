@@ -85,24 +85,44 @@ char area_libera (pframe_t* f,area_t* aree) {
 
 /* ------------------------------------------------------------------------- */
 void occupa_area (pframe_t* f,area_t* aree,char* pack) {
-	int i,s = mac2nsta ((*f).addr2);
+	int i,j,power2=1,s = mac2nsta ((*f).addr2);
+	timev_t t;
+	long epoca;
 
-	/* Copiamo il pacchetto nell'area in modo da simulare il pacchetto in transito.
-	Da ora in poi si considererà questa copia del pacchetto */	
-	for (i=0;i<(*f).packetl;i++)
-		aree [s-1].pack [i]= pack [i];
+	/* 
+		Nel caso la stazione sia la 4 allora deve mettere lo stesso pacchetto in entrambe
+		le aree perchè sarà da spedire a tutti
+	*/ 
+
+	for (i=0;i<_n_area;i++) {
+		if (_area_stax [s-1] & power2) {
+			/* Copiamo il pacchetto nell'area in modo da simulare il pacchetto in transito.
+			Da ora in poi si considererà questa copia del pacchetto */	
+			for (j=0;j<(*f).packetl;j++)
+				aree [i].pack [j]= pack [j];
 		
-	/* Impostiamo la durata del pacchetto a seconda del tipo */
-	aree [s-1].durata = siamo qui
+			/* Impostiamo la durata del pacchetto a seconda del tipo 
+				500ms per pacchetti RTS, CTS o < 100 byte
+				2000ms per tutti gli altri
+			*/
+			
+			for (j=0;j<10;j++) {		mettere a posto la duration
+			gettimeofday (&t,NULL);
+			epoca = t.tv_sec * 1000;
+			epoca = t.tv_usec;
+			printf ("EPOCH : %ld\n",epoca);
+			
+			if ((*f).rts == 1 || (*f).cts || (*f).packetl < 100)	aree [i].durata = _packet_duration_low;
+			else 	aree [i].durata = _packet_duration_hi;
+	
+			/* Da questo momento l'area risulta occupata */
+		}
+		power2 *= 2;
+	}
 }
 
 /* ------------------------------------------------------------------------- */
 void libera_area (pframe_t* f) {
-
-}
-
-/* ------------------------------------------------------------------------- */
-void metti_pacchetto_nel_buffer (char* pack,pframe_t* f) {
 
 }
 
@@ -117,14 +137,9 @@ void svuota_buffer_area (pframe_t* f) {
 }
 
 /* ------------------------------------------------------------------------- */
-char buffer_pieno (void) {
+int prendi_pacchetto_dal_buffer (char* pack) {
 
-	return (TRUE);
-}
-
-/* ------------------------------------------------------------------------- */
-void prendi_pacchetto_dal_buffer (char* pack) {
-
+	return (0);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -145,6 +160,20 @@ void elimina_pacchetto_dal_buffer (pframe_t* f)  {
 
 /* ------------------------------------------------------------------------- */
 char conflitto_di_destinazioni (void) {
+
+	return (TRUE);
+}
+
+/* ------------------------------------------------------------------------- */
+
+char scaduto_timer (int area_attiva, area_t* aree) {
+
+	return (TRUE);
+}
+
+/* ------------------------------------------------------------------------- */
+
+char pacchetto_in_area (area_t*  aree) {
 
 	return (TRUE);
 }

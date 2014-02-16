@@ -65,15 +65,6 @@ void libera_area (pframe_t* f);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
-* Descrizione	: Mette il pacchetto nel buffer (nell'area giusta)
-* Par. Formali  :
-				pack : pacchetto in formato pseudo 802.11
-				f : pacchetto formattato
----------------------------------------------------------------------------- */
-void metti_pacchetto_nel_buffer (char* pack,pframe_t* f);
-
-/* ------------------------------------------------------------------------- 
-* Nome			: carlo
 * Descrizione	: Marca il frame corrotto e lo spedisce a tutte le stazioni 
 				  dell'area di visibilità elettromagnetica (compreso il mittente)
 * Par. Formali  :
@@ -92,18 +83,12 @@ void svuota_buffer_area (pframe_t* f);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
-* Descrizione	: Verifica se il buffer contiene qualche elemento
-* Par. Ritorno  : Restituisce TRUE se c'è almeno un pacchetto nel buffer
----------------------------------------------------------------------------- */
-char buffer_pieno (void);
-
-/* ------------------------------------------------------------------------- 
-* Nome			: carlo
 * Descrizione	: Prende il primo pacchetto che trova nel buffer delle aree
+* Par. Ritorno  : Restituisce il numero dell'area dalla quale viene prelevato il pacchetto 
 * Par. Formali  :
 				pack : pacchetto in formato pseudo 802.11 (da restituire)
 ---------------------------------------------------------------------------- */
-void prendi_pacchetto_dal_buffer (char* pack);
+int prendi_pacchetto_dal_buffer (char* pack);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
@@ -136,6 +121,24 @@ void elimina_pacchetto_dal_buffer (pframe_t* f);
 * Par. Ritorno  : Restituisce TRUE se ci sono più pacchetti per lo stesso mittente
 ---------------------------------------------------------------------------- */
 char conflitto_di_destinazioni (void);
+
+/* ------------------------------------------------------------------------- 
+* Nome			: carlo
+* Descrizione	: Prende il primo pacchetto che trova nel buffer delle aree
+* Par. Ritorno  : Restituisce il numero dell'area dalla quale viene prelevato il pacchetto 
+* Par. Formali  :
+				pack : pacchetto in formato pseudo 802.11 (da restituire)
+---------------------------------------------------------------------------- */
+char scaduto_timer (int area_attiva, area_t* aree);
+
+/* ------------------------------------------------------------------------- 
+* Nome			: carlo
+* Descrizione	: Verifica se c'è almeno un pacchetto nelle aree
+* Par. Ritorno  : Restituisce TRUE se c'è almeno un pacchetto
+* Par. Formali  :
+				aree : stato delle aree gestite dal mezzo
+---------------------------------------------------------------------------- */
+char pacchetto_in_area (area_t*  aree);
 
 #endif
 

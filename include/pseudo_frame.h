@@ -54,6 +54,9 @@
 
 #define _crc_ok 1	/* valore di default del CRC. Indica che il pacchetto non è corrotto */
 
+#define _packet_duration_low 500	/* Durata per CTS, RTS e pacchetti < 100 byte */
+#define _packet_duration_hi 2000	/* Durata per gli altri pacchetti */
+
 /* ------------------------------------------------------------------------- */
 /* Strutture dati */
 
