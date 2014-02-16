@@ -15,7 +15,7 @@
 	1b	cts				1 - clear to send // 0 - non attivato
 	1b	scan			0 - no scan // 1 - scan richiesta // 2 - scan risposta
 	1b	duration		tempo di occupazione del canale (unità 100ms)
-	2b	packet lenght	lunghezza in byte del pacchetto
+	2b	packet lenght	lunghezza totale in byte del pacchetto (headers + payload)
 	6b	addr1			indirizzo mac destinatario
 	6b	addr2			indirizzo mac mittente
 	6b	addr3
@@ -62,14 +62,13 @@
 typedef struct pframe {
 	char data, dtype, tods, fromds, rts, cts, scan, duration, crc;
 	int packetl, seqctrl;
-	char addr1[6], addr2[6], addr3[6], addr4[6];
+	char addr1[6], addr2[6], addr3[6], addr4[6];	/* addr1->dst ** addr2->src */
 	char *buf;
 } pframe_t;
 
 /* ------------------------------------------------------------------------- */
 /* Prototipi delle funzioni */
 
-char* set_frame_buffer (pframe_t* pf);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
 * Descrizione	: setta il frame buffer in base al contenuto della struttura 
@@ -79,8 +78,8 @@ char* set_frame_buffer (pframe_t* pf);
 * Par. Formali  :
 			- pf  : puntatore alla struttura pframe 
 ---------------------------------------------------------------------------- */
+char* set_frame_buffer (pframe_t* pf);
 
-pframe_t* get_frame_buffer (char* buf);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
 * Descrizione	: prende il contenuto del buffer e lo trasferisce in una
@@ -90,24 +89,24 @@ pframe_t* get_frame_buffer (char* buf);
 * Par. Formali  :
 			- buf : puntatore al frame buffer da leggere
 ---------------------------------------------------------------------------- */
+pframe_t* get_frame_buffer (char* buf);
 
-void remove_frame_buffer (char* buffer);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
 * Descrizione	: dealloca un frame buffer
 * Par. Formali  :
 			- buffer : indirizzo del buffer da deallocare
 ---------------------------------------------------------------------------- */
+void remove_frame_buffer (char* buffer);
 
-void remove_pframe (pframe_t* pf);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
 * Descrizione	: dealloca una struttura di tipo pframe
 * Par. Formali  :
 			- pf : indirizzo della struttura da deallocare
 ---------------------------------------------------------------------------- */
+void remove_pframe (pframe_t* pf);
 
-char complete_frame (int n,char* buf);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
 * Descrizione	: verifica se il pacchetto è stato ricevuto completo
@@ -116,6 +115,7 @@ char complete_frame (int n,char* buf);
 			- n : numero di byte attualmente ricevuti
 			- buf : buffer del pacchetto
 ---------------------------------------------------------------------------- */
+char complete_frame (int n,char* buf);
 
 #endif
 

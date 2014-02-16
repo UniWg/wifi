@@ -266,8 +266,8 @@ void select_setup (stato_t *s) {
 			- s	: struttura di stato
 			- t : tempo di risveglio
 ---------------------------------------------------------------------------- */
-void vita_mezzo (stato_t *s,timev_t *t) {
-	int numero_eventi,j,n;
+void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
+	int numero_eventi;
 	pframe_t* f;
 	char pack [_max_frame_buffer_size];
 
@@ -285,11 +285,11 @@ void vita_mezzo (stato_t *s,timev_t *t) {
 	/* #### ARRIVATO PACCHETTO ################################## */
 	if (numero_eventi > 0) {
 		/* Prendiamo il pacchetto ... */
-		prendi_pacchetto (pack);
+		prendi_pacchetto (s,pack);
 		/* ... e lo spacchettiamo */
 		f = get_frame_buffer (pack);
-		if (area_libera (f) == TRUE) {
-			occupa_area (f);		/* occupiamo l'area per il tempo indicato in duration */
+		if (area_libera (f,aree) == TRUE) {
+			occupa_area (f,aree,pack);				/* occupiamo l'area per il tempo indicato in duration */
 			metti_pacchetto_nel_buffer (pack,f); 	/* Mettiamo il pacchetto nel buffer della sua area */
 		}
 		else {
@@ -391,8 +391,10 @@ void vita_mezzo_0 (stato_t *s,timev_t *t) {
 * Par. Formali  : param = NULL
 ---------------------------------------------------------------------------- */
 void* main_mc_thread (void* param) {
+	int i;
 	stato_t stato;
 	timev_t t;
+	area_t aree [_n_area];
 	
 	/* Inizializziamo il socket in modo che sia pronto ad accettare connessioni */
 	inizializza_socket ();
@@ -403,9 +405,17 @@ void* main_mc_thread (void* param) {
 	
 	/* Impostiamo il timeout di 100msec */
 	t.tv_sec = 0; t.tv_usec = 100000;
+	
+	
+	/* Resettiamo le aree */
+	for (i=0;i<_n_area;i++) {
+		aree [i].size = 0;
+		aree [i].durata = 0;
+	}
+	
 	/* Ciclo principale: vita del mezzo condiviso */
 	while (1) {
-		vita_mezzo_0 (&stato,&t);
+		vita_mezzo (&stato,&t,aree);
 	}
 	
 	return (0);

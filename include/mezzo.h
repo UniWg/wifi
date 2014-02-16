@@ -5,6 +5,7 @@
 
 /* ------------------------------------------------------------------------- */
 /* --- Costanti --- */
+#define _n_area 2			/* Numero di aree gestite dal mezzo condiviso A1 -> sta 1,2,4 ** A2 -> sta 3,4 */
 #define _max_connection 10	/* Numero massimo di connessioni contemporanee */
 #define _Cmezzo _CCyan		/* Colore dei messaggi del mezzo condiviso */
 
@@ -32,6 +33,11 @@ typedef struct {
 	stabuf_t clibuf [_nsta];	/* buffer dei client connessi */
 	int mezzofd;		/* fd del mezzo condiviso */
 } stato_t;
+
+typedef struct {
+	char pack [_max_frame_buffer_size];		/* Pacchetto in transito nell'area */
+	int durata;								/* Durata della trasmissione in millisec */
+} area_t;
 
 /* ------------------------------------------------------------------------- */
 /* --- Variabili globali --- */

@@ -31,9 +31,10 @@ int out_of_time (stato_t* s);
 * Nome			: carlo
 * Descrizione	: Prende il primo pacchetto che è stato ricevuto dal mezzo condiviso
 * Par. Formali  :
+				s : registro di stato della select
 				pack : pacchetto in formato pseudo 802.11 (da restituire)
 ---------------------------------------------------------------------------- */
-void prendi_pacchetto (char* pack);
+void prendi_pacchetto (stato_t *s,char* pack);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
@@ -41,16 +42,18 @@ void prendi_pacchetto (char* pack);
 * Par. Ritorno  : Restituisce TRUE se l'area è libera
 * Par. Formali  :
 				f : pacchetto formattato
+				aree : stato delle aree gestite dal mezzo
 ---------------------------------------------------------------------------- */
-char area_libera (pframe_t* f);
+char area_libera (pframe_t* f,area_t* aree);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
 * Descrizione	: Occupa l'area del pacchetto f per un tempo pari a Duration
 * Par. Formali  :
 				f : pacchetto formattato
+				aree : stato delle aree gestite dal mezzo
 ---------------------------------------------------------------------------- */
-void occupa_area (pframe_t* f);
+void occupa_area (pframe_t* f,area_t* aree,char* pack);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
