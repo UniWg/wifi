@@ -268,6 +268,8 @@ void select_setup (stato_t *s) {
 ---------------------------------------------------------------------------- */
 void vita_mezzo (stato_t *s,timev_t *t) {
 	int numero_eventi,j,n;
+	pframe_t* f;
+	char pack [_max_frame_buffer_size];
 
 	do {
 		select_setup (s);
@@ -280,25 +282,54 @@ void vita_mezzo (stato_t *s,timev_t *t) {
 		exit (-1);
 	}
 	
-	if (numero_eventi == 0) {
-		/* E' scaduto il timeout */
-		if (stesso_dest (s) > 0) {
-			/* Abbiamo più frame per lo stesso destinatario. Dobbiamo gestire l'anomalia */
-			
+	/* #### ARRIVATO PACCHETTO ################################## */
+	if (numero_eventi > 0) {
+		/* Prendiamo il pacchetto ... */
+		prendi_pacchetto (pack);
+		/* ... e lo spacchettiamo */
+		f = get_frame_buffer (pack);
+		if (area_libera (f) == TRUE) {
+			occupa_area (f);		/* occupiamo l'area per il tempo indicato in duration */
+			metti_pacchetto_nel_buffer (pack,f); 	/* Mettiamo il pacchetto nel buffer della sua area */
 		}
-		else if (out_of_time (s) > 0) {
-			/* OUT_OF_TIME DA FINIRE */
+		else {
+			/* l'area non è libera. Il pacchetto arrivato ha generato una collisione */
+			/* Marchiamo il pacchetto corrotto e lo spediamo a tutte le destinazioni dell'area */
+			marca_frame_corrotto_e_spedisci (pack,f);
+			svuota_buffer_area (f);
+			libera_area (f);		/* E' il complementare di occupa_area (f); */
 		}
-	}	
+	} 
+	/* #### SCADUTO TIMEOUT DELLA SELECT (100ms) ################################## */
 	else {
-		/* Controlliamo quali descrittori sono settati */
-		for (j=0;j<_nsta;j++) {
-			if (FD_ISSET ((*s).clientfd [j],&(*s).Rset)) {
-				/* Leggo il frame ... */
-				do {
-					n = recv ((*s).clientfd [j],(*s).clibuf [j].buf,_maxbuflen,0);
-				} while ((n<0) && (errno==EINTR));
+		if (buffer_pieno () == TRUE) {
+			/* Prendiamo il pacchetto (senza eliminarlo) ... */
+			prendi_pacchetto_dal_buffer (pack);
+			/* ... e lo spacchettiamo */
+			f = get_frame_buffer (pack);
+			if (genera_errore_casuale () == TRUE) {
+				/* Abbiamo generato un errore casuale e quindi dobbiamo interrompere tutte le attività in corso */
+				marca_frame_corrotto_e_spedisci (pack,f);
+				svuota_buffer_area (f);
+				libera_area (f);
 			} 
+			else {
+				if (conflitto_di_destinazioni ()) { 	/* Ci sono più pacchetti per lo stesso mittente */
+					/* Spedisce un pacchetto a tutti con CRC = 0 e poi resetta la situazione */
+					marca_frame_corrotto_e_spedisci (pack,NULL);
+					svuota_buffer_area (NULL);
+					libera_area (NULL);
+				}
+				else {
+					/* Spedisci il pacchetto e toglilo dal buffer */
+					spedisci_pacchetto (pack,f);
+					elimina_pacchetto_dal_buffer (f);
+					libera_area (f);
+				}
+			}
+		} 
+		else {
+			libera_area (NULL);		/* Liberiamo tutte le aree */
 		}
 	}
 }

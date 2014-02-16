@@ -13,12 +13,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "pseudo_frame.h"
 #include "applica.h"
 #include "costanti.h"
 #include "colors.h"
 #include "mezzo.h"
 #include "mezzo_sub.h"
-#include "pseudo_frame.h"
 #include "read_write.h"
 #include "stazione.h"
 #include "stazione_sub.h"
