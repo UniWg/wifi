@@ -267,7 +267,7 @@ void select_setup (stato_t *s) {
 			- t : tempo di risveglio
 ---------------------------------------------------------------------------- */
 void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
-	int numero_eventi,area_attiva;
+	int numero_eventi;
 	pframe_t* f;
 	char pack [_max_frame_buffer_size];
 
@@ -289,7 +289,7 @@ void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
 		/* ... e lo spacchettiamo */
 		f = get_frame_buffer (pack);
 		if (area_libera (f,aree) == TRUE) {
-			/* occupiamo l'area per il tempo indicato in duration e mettiamo il pacchetto nell'area */
+			/* occupiamo una o più aree per il tempo indicato in duration e mettiamo il pacchetto nell'area */
 			occupa_area (f,aree,pack);				
 		}
 		else {
@@ -304,12 +304,10 @@ void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
 	else {
 		/* Vediamo se c'è almeno un pacchetto nelle aree */
 		if (pacchetto_in_area (aree) == TRUE) {			
-			/* Prendiamo il pacchetto (senza eliminarlo dal buffer dell'area) ... */
-			area_attiva = prendi_pacchetto_dal_buffer (pack);
-			/* ... e lo spacchettiamo */
-			f = get_frame_buffer (pack);
 			if (genera_errore_casuale () == TRUE) {
 				/* Abbiamo generato un errore casuale e quindi dobbiamo interrompere tutte le attività in corso */
+				/* ATTENZIONE : f deve essere inizializzato */
+				f = 0; /* serve solo per eliminare il warning. metterlo a posto */
 				marca_frame_corrotto_e_spedisci (pack,f);
 				svuota_buffer_area (f);
 				libera_area (f);
@@ -322,9 +320,11 @@ void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
 					libera_area (NULL);
 				}
 				else {
-					if (scaduto_timer (area_attiva,aree) == TRUE) {
+					spedisci_prima_parte_pacchetto (s,aree);
+					if (scaduto_timer (aree) == TRUE) {
+						f = get_frame_buffer (pack); /* ??? */
 						/* Spedisci il pacchetto e toglilo dal buffer */
-						spedisci_pacchetto (pack,f);
+						spedisci_ultimo_byte (s,aree);
 						elimina_pacchetto_dal_buffer (f);
 						libera_area (f);
 					}
@@ -409,10 +409,10 @@ void* main_mc_thread (void* param) {
 	/* Impostiamo il timeout di 100msec */
 	t.tv_sec = 0; t.tv_usec = 100000;
 	
-	
 	/* Resettiamo le aree */
 	for (i=0;i<_n_area;i++) {
 		aree [i].durata = 0;
+		aree [i].spedita_prima_parte = FALSE;
 	}
 	
 	/* Ciclo principale: vita del mezzo condiviso */

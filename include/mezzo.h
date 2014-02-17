@@ -36,7 +36,10 @@ typedef struct {
 
 typedef struct {
 	char pack [_max_frame_buffer_size];		/* Pacchetto in transito nell'area */
-	int durata;								/* Durata della trasmissione in millisec */
+	long durata;							/* TDout = tempo attuale + tempo di trasmissione (in millisec)
+											   In pratica viene memorizzate il momento (epoch) in 
+											   cui la trasmissione termina */
+	char spedita_prima_parte;				/* TRUE se ha spedito n-1 byte */
 } area_t;
 
 /* ------------------------------------------------------------------------- */

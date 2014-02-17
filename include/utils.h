@@ -1,7 +1,6 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
-void cpmac (const char* src,char* dst);
 /* ----------------------------------------------------------------------------
 * Nome			: 
 * Descrizione	: copia il mac address dal formato esteso al formato a 6 byte.
@@ -11,8 +10,8 @@ void cpmac (const char* src,char* dst);
 			src : mac address sorgente in formato esteso
 			dst : mac address destinazione in formato compatto 6 byte		    
 ---------------------------------------------------------------------------- */
+void cpmac (const char* src,char* dst);
 
-void mac2str (const char* mac,char* asc);
 /* ----------------------------------------------------------------------------
 * Nome			: 
 * Descrizione	: converte il mac address dal formato formato esteso al 
@@ -22,8 +21,8 @@ void mac2str (const char* mac,char* asc);
 					non ci sono controlli sulla correttezza formale della stringa
 			- asc : contiene il risultato della conversione
 ---------------------------------------------------------------------------- */
+void mac2str (const char* mac,char* asc);
 
-void str2mac (char* asc,char* mac);
 /* ----------------------------------------------------------------------------
 * Nome			: 
 * Descrizione	: converte il mac address dal formato formato a 6 byte al  
@@ -33,8 +32,8 @@ void str2mac (char* asc,char* mac);
 					non ci sono controlli sulla correttezza formale della stringa
 			- mac : contiene il risultato della conversione
 ---------------------------------------------------------------------------- */
+void str2mac (char* asc,char* mac);
 
-int mac2nsta (char* mac);
 /* ----------------------------------------------------------------------------
 * Nome			: 
 * Descrizione	: dato il mac restituisce il relativo numero di stazione
@@ -42,6 +41,14 @@ int mac2nsta (char* mac);
 * Par. Formali  :
 			- mac : mac address della stazione nel formato 6 byte
 ---------------------------------------------------------------------------- */
+int mac2nsta (char* mac);
+
+/* ----------------------------------------------------------------------------
+* Nome			: 
+* Descrizione	: Restituisce epoch in millisecondi
+* Par. Ritorno  : tempo attuale in millisecondi
+---------------------------------------------------------------------------- */
+long getNOWmsec (void);
 
 #endif
 

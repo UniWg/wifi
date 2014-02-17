@@ -1,6 +1,9 @@
 #ifndef _MEZZO_SUB_H
 #define _MEZZO_SUB_H
 
+/* ------------------------------------------------------------------------- */
+/* Prototipi delle funzioni */
+
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
 * Descrizione	: Verifica se nel buffer di ricezione del mezzo (.clibuf) ci sono
@@ -83,15 +86,6 @@ void svuota_buffer_area (pframe_t* f);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
-* Descrizione	: Prende il primo pacchetto che trova nel buffer delle aree
-* Par. Ritorno  : Restituisce il numero dell'area dalla quale viene prelevato il pacchetto 
-* Par. Formali  :
-				pack : pacchetto in formato pseudo 802.11 (da restituire)
----------------------------------------------------------------------------- */
-int prendi_pacchetto_dal_buffer (char* pack);
-
-/* ------------------------------------------------------------------------- 
-* Nome			: carlo
 * Descrizione	: Verifica se è il momento di generare un pacchetto difettoso
 * Par. Ritorno  : Restituisce TRUE se bisogna generare un pacchetto difettoso
 ---------------------------------------------------------------------------- */
@@ -99,12 +93,21 @@ char genera_errore_casuale (void);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
-* Descrizione	: Spedisce il pacchetto a tutte le sta dell'area fuorchè al mittente
+* Descrizione	: Spedisce primi n-1 byte del pacchetto a tutte le sta dell'area fuorchè al mittente
 * Par. Formali  :
-				pack : pacchetto in formato pseudo 802.11
-				f : pacchetto formattato
+				s : registro di stato della select
+				aree : stato delle aree gestite dal mezzo
 ---------------------------------------------------------------------------- */
-void spedisci_pacchetto (char* pack,pframe_t* f);
+void spedisci_prima_parte_pacchetto (stato_t *s,area_t* aree);
+
+/* ------------------------------------------------------------------------- 
+* Nome			: carlo
+* Descrizione	: Spedisce ultimo byte del pacchetto a tutte le sta dell'area fuorchè al mittente
+* Par. Formali  :
+				s : registro di stato della select
+				aree : stato delle aree gestite dal mezzo
+---------------------------------------------------------------------------- */
+void spedisci_ultimo_byte (stato_t *s,area_t* aree);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
@@ -124,12 +127,12 @@ char conflitto_di_destinazioni (void);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
-* Descrizione	: Prende il primo pacchetto che trova nel buffer delle aree
-* Par. Ritorno  : Restituisce il numero dell'area dalla quale viene prelevato il pacchetto 
+* Descrizione	: Verifica se è scaduto il TDout di qualche pacchetto
+* Par. Ritorno  : Restituisce TRUE se è scaduto almeno un TDout
 * Par. Formali  :
-				pack : pacchetto in formato pseudo 802.11 (da restituire)
+				aree : stato delle aree gestite dal mezzo
 ---------------------------------------------------------------------------- */
-char scaduto_timer (int area_attiva, area_t* aree);
+char scaduto_timer (area_t* aree);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo

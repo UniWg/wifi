@@ -1,7 +1,7 @@
 #ifndef _STAZIONE_SUB_H
 #define _STAZIONE_SUB_H
 
-int appendi_pacchetto (char* dst, char* src, int nnow, int nadd);
+
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
 * Descrizione	: Aggiunge src in coda a dst
@@ -12,5 +12,6 @@ int appendi_pacchetto (char* dst, char* src, int nnow, int nadd);
 			- nnow : numero di caratteri presenti nel buffer di destinazione
 			- nadd : numero di caratteri presenti nel buffer sorgente
 ---------------------------------------------------------------------------- */
+int appendi_pacchetto (char* dst, char* src, int nnow, int nadd);
 
 #endif

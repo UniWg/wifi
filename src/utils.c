@@ -72,6 +72,19 @@ int mac2nsta (char* mac) {
 
 /* ------------------------------------------------------------------------- */
 
+long getNOWmsec (void) {
+	long epoca;
+	timev_t t;
+	
+	gettimeofday (&t,NULL);		/* prendiamo il tempo attuale */
+	epoca = t.tv_sec * 1000;	/* secondi : moltiplichiamo per 1000 per ottenere millisecondi */
+	epoca += t.tv_usec/1000;	/* microsecondi : dividiamo per 1000 per ottenere millisecondi */
+	return (epoca);
+}
+
+
+/* ------------------------------------------------------------------------- */
+
 
 
 

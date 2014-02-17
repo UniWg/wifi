@@ -86,8 +86,6 @@ char area_libera (pframe_t* f,area_t* aree) {
 /* ------------------------------------------------------------------------- */
 void occupa_area (pframe_t* f,area_t* aree,char* pack) {
 	int i,j,power2=1,s = mac2nsta ((*f).addr2);
-	timev_t t;
-	long epoca;
 
 	/* 
 		Nel caso la stazione sia la 4 allora deve mettere lo stesso pacchetto in entrambe
@@ -102,18 +100,16 @@ void occupa_area (pframe_t* f,area_t* aree,char* pack) {
 				aree [i].pack [j]= pack [j];
 		
 			/* Impostiamo la durata del pacchetto a seconda del tipo 
-				500ms per pacchetti RTS, CTS o < 100 byte
-				2000ms per tutti gli altri
+				+500ms per pacchetti RTS, CTS o < 100 byte
+				+2000ms per tutti gli altri
 			*/
-			
-			for (j=0;j<10;j++) {		mettere a posto la duration
-			gettimeofday (&t,NULL);
-			epoca = t.tv_sec * 1000;
-			epoca = t.tv_usec;
-			printf ("EPOCH : %ld\n",epoca);
-			
-			if ((*f).rts == 1 || (*f).cts || (*f).packetl < 100)	aree [i].durata = _packet_duration_low;
-			else 	aree [i].durata = _packet_duration_hi;
+			if (aree [i].durata != 0) {
+				printf ("<occupa_area> errore critico. \"Durata\" area %d non è a zero",i+1);  
+				exit (1);
+			}
+			aree [i].durata = getNOWmsec ();	/* epoch msec */
+			if ((*f).rts == 1 || (*f).cts || (*f).packetl < 100)	aree [i].durata += _packet_duration_low;
+			else 	aree [i].durata += _packet_duration_hi;
 	
 			/* Da questo momento l'area risulta occupata */
 		}
@@ -137,20 +133,9 @@ void svuota_buffer_area (pframe_t* f) {
 }
 
 /* ------------------------------------------------------------------------- */
-int prendi_pacchetto_dal_buffer (char* pack) {
-
-	return (0);
-}
-
-/* ------------------------------------------------------------------------- */
 char genera_errore_casuale (void) {
 
-	return (TRUE);
-}
-
-/* ------------------------------------------------------------------------- */
-void spedisci_pacchetto (char* pack,pframe_t* f) {
-
+	return (FALSE);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -161,21 +146,109 @@ void elimina_pacchetto_dal_buffer (pframe_t* f)  {
 /* ------------------------------------------------------------------------- */
 char conflitto_di_destinazioni (void) {
 
-	return (TRUE);
+	return (FALSE);
 }
 
 /* ------------------------------------------------------------------------- */
 
-char scaduto_timer (int area_attiva, area_t* aree) {
+char scaduto_timer (area_t* aree) {
+	long epoca;
+	int i;	
+	char ris = FALSE;
+	
+	epoca = getNOWmsec ();	/* epoch msec */
+	for (i=0;i<_n_area;i++)	{
+		if ((aree [i].durata>0) && (aree [i].durata<=epoca)) {
+			ris = TRUE;
+			break;
+		}
+	}
 
-	return (TRUE);
+	return (ris);
 }
 
 /* ------------------------------------------------------------------------- */
 
-char pacchetto_in_area (area_t*  aree) {
+char pacchetto_in_area (area_t* aree) {
+	int i;
+	char ris = FALSE;
+	
+	for (i=0;i<_n_area;i++)	{
+		if (aree [i].durata != 0) {	
+			ris = TRUE;					/* Abbiamo almeno un'area occupata */
+			break;
+		}
+	}
 
-	return (TRUE);
+	return (ris);
+}
+
+/* ------------------------------------------------------------------------- */
+
+void spedisci_prima_parte_pacchetto (stato_t *s,area_t* aree) {
+	int i,k,mitt,len,nwrite,n;
+	pframe_t* f;
+	
+	for (i=0;i<_n_area;i++)	{
+		if ((aree [i].durata > 0) && (aree [i].spedita_prima_parte == FALSE)) {
+			/* Spediamo gli n-1 byte di questo pacchetto a tutte le stazioni dell'area tranne che al mittente */
+			
+			f = get_frame_buffer (aree [i].pack);		/* Prendiamo il pacchetto da spedire */
+			mitt = mac2nsta ((*f).addr2);				/* numero stazione mittente */
+			len = (*f).packetl-1;						/* Non spediamo l'ultimo byte */	
+			
+			for (k=0;k<_nsta;k++) {
+				/* and logico tra il numero della stazione e la configurazione del campo di visibilità del mittente */
+				/* in pratica serve per dedurre le stazioni raggiungibili */
+				if ((_campo_stax [k] & _sta_di_stax [mitt-1]) && (k!=(mitt-1))) {
+					nwrite=0;
+					while ((n = write((*s).clientfd [k], aree [i].pack, len-nwrite)) >0)
+						nwrite+=n;
+					printf (_Cmezzo "%d Spedito primi n-1 byte a stazione %d\n" _CColor_Off,mitt,k+1);
+				}
+			}
+
+			aree [i].spedita_prima_parte = TRUE;	/* I primi n-1 byte sono stati spediti */
+		}
+	}
+}
+
+/* ------------------------------------------------------------------------- */
+
+void spedisci_ultimo_byte (stato_t *s,area_t* aree) {
+	long epoca;
+	int i,k,mitt,len,nwrite,n;
+	pframe_t* f;
+	char buf [1];
+	
+	epoca = getNOWmsec ();	/* epoch msec */
+	for (i=0;i<_n_area;i++)	{
+		if ((aree [i].durata > 0) && (aree [i].spedita_prima_parte == TRUE) && (aree [i].durata<=epoca)) {
+			/* Spediamo l'ultimo  byte di questo pacchetto a tutte le stazioni dell'area tranne che al mittente */
+			
+			f = get_frame_buffer (aree [i].pack);		/* Prendiamo il pacchetto da spedire */
+			mitt = mac2nsta ((*f).addr2);				/* numero stazione mittente */
+			len = 1;										
+			buf [0] = aree [i].pack [(*f).packetl-1];	/* Spediamo solo l'ultimo byte */
+			
+			for (k=0;k<_nsta;k++) {
+				/* and logico tra il numero della stazione e la configurazione del campo di visibilità del mittente */
+				/* in pratica serve per dedurre le stazioni raggiungibili */
+				if ((_campo_stax [k] & _sta_di_stax [mitt-1]) && (k!=(mitt-1))) {
+					nwrite=0;
+					while ((n = write((*s).clientfd [k], buf, len-nwrite)) >0)
+						nwrite+=n;
+					printf (_Cmezzo "%d Spedito ultimo byte a stazione %d\n" _CColor_Off,mitt,k+1);
+				}
+			}
+
+			aree [i].spedita_prima_parte = TRUE;	/* I primi n-1 byte sono stati spediti */
+			
+			/* Togliamo il pacchetto dal buffer */
+			aree [i].durata = 0;
+			aree [i].spedita_prima_parte = FALSE;
+		}
+	}
 }
 
 /* ------------------------------------------------------------------------- */
