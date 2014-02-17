@@ -40,6 +40,9 @@ typedef struct {
 											   In pratica viene memorizzate il momento (epoch) in 
 											   cui la trasmissione termina */
 	char spedita_prima_parte;				/* TRUE se ha spedito n-1 byte */
+	char errore_in_corso;					/* TRUE se c'è un errore in corso nell'area */
+	int contatore_di_pacchetti;				/* Contatore di pacchetti spediti. Serve fondamentalmente per 
+										       calcolare la percentuale di pacchetti difettosi */
 } area_t;
 
 /* ------------------------------------------------------------------------- */

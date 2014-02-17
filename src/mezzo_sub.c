@@ -85,6 +85,7 @@ char area_libera (pframe_t* f,area_t* aree) {
 
 /* ------------------------------------------------------------------------- */
 void occupa_area (pframe_t* f,area_t* aree,char* pack) {
+
 	int i,j,power2=1,s = mac2nsta ((*f).addr2);
 
 	/* 
@@ -118,29 +119,57 @@ void occupa_area (pframe_t* f,area_t* aree,char* pack) {
 }
 
 /* ------------------------------------------------------------------------- */
-void libera_area (pframe_t* f) {
-
+void marca_errore_per_collisione (pframe_t* f,area_t* aree) {
+	int i,j,power2=1,s = mac2nsta ((*f).addr2);
+	
+	/* Potenzialmente sta4 potrebbe generare collisioni su entrambe le aree */
+	
+	for (i=0;i<_n_area;i++) {
+		if (_area_stax [s-1] & power2) {
+			
+			/*siamo qui.
+			stiamo ciclando sulle aree per vedere quelle che sono di competenza
+			della stazione.
+			viene marcato errore nell'area che risulta essere già occupata
+			potenzialmente sta4 potrebbe generare collisioni solo su una delle due
+			aree di sua competenza*/
+			
+		}
+		power2 *= 2;
+	}
 }
 
 /* ------------------------------------------------------------------------- */
-void marca_frame_corrotto_e_spedisci (char* pack,pframe_t* f) {
-
-}
-
-/* ------------------------------------------------------------------------- */
-void svuota_buffer_area (pframe_t* f) {
-
-}
-
-/* ------------------------------------------------------------------------- */
-char genera_errore_casuale (void) {
-
-	return (FALSE);
-}
-
-/* ------------------------------------------------------------------------- */
-void elimina_pacchetto_dal_buffer (pframe_t* f)  {
-
+/* Il contatore di pacchetti non viene inizializzato, tanto il valore ha solo importanza relativa */
+void genera_errore_casuale (area_t* aree) {
+	int i;
+	char errore;
+	
+	if (_abilita_errori == TRUE) {
+	
+		for (i=0;i<_n_area;i++) {
+			/* L'errore viene generato solo se c'è un pacchetto in corso di tramissione */
+			if ((aree [i].durata > 0) && (aree [i].errore_in_corso == FALSE)) {
+				errore = FALSE;
+				if (aree [i].contatore_di_pacchetti > 1000) {
+					aree [i].contatore_di_pacchetti = 0;
+					errore = TRUE;
+				} 
+				else {
+					if ((aree [i].contatore_di_pacchetti % (100 / _percento_errori)) == 0) {
+						aree [i].contatore_di_pacchetti++;
+						errore = TRUE;
+					}
+				}
+	
+				if (errore == TRUE) {
+					/* Abbiamo generato un errore. Dobbiamo indicarlo e mettere a zero il CRC del pacchetto */
+					aree [i].errore_in_corso = TRUE;
+					set_CRC0 (i,aree);
+				}
+			}
+		}
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -241,14 +270,32 @@ void spedisci_ultimo_byte (stato_t *s,area_t* aree) {
 					printf (_Cmezzo "%d Spedito ultimo byte a stazione %d\n" _CColor_Off,mitt,k+1);
 				}
 			}
-
-			aree [i].spedita_prima_parte = TRUE;	/* I primi n-1 byte sono stati spediti */
 			
 			/* Togliamo il pacchetto dal buffer */
-			aree [i].durata = 0;
-			aree [i].spedita_prima_parte = FALSE;
+			/* Se ci sono errori allora non devono essere resettati, ma lasciati in evidenza */
+			reset_area (i,aree);
+			
+			/* Incrementiamo il numero di pacchetti spediti (serve per il calcolo degli errori) */
+			aree [i].contatore_di_pacchetti++;
 		}
 	}
+}
+
+/* ------------------------------------------------------------------------- */
+void reset_area (int index,area_t* aree) {
+	aree [index].durata = 0;
+	aree [index].spedita_prima_parte = FALSE;
+}
+
+/* ------------------------------------------------------------------------- */
+void set_CRC0 (int index,area_t* aree) {
+	pframe_t* f;
+	
+	/* Individuiamo la lunchezza del pacchetto ... */
+	f = get_frame_buffer (aree [index].pack);
+	
+	/* ... e mettiamo a zero l'ultimo byte, quello corrispondente al CRC */
+	aree [index].pack [(*f).packetl-1] = 0;
 }
 
 /* ------------------------------------------------------------------------- */

@@ -55,16 +55,9 @@ char area_libera (pframe_t* f,area_t* aree);
 * Par. Formali  :
 				f : pacchetto formattato
 				aree : stato delle aree gestite dal mezzo
+				pack : pacchetto in formato pseudo 802.11
 ---------------------------------------------------------------------------- */
 void occupa_area (pframe_t* f,area_t* aree,char* pack);
-
-/* ------------------------------------------------------------------------- 
-* Nome			: carlo
-* Descrizione	: Libera l'area indicata da f
-* Par. Formali  :
-				f : pacchetto formattato
----------------------------------------------------------------------------- */
-void libera_area (pframe_t* f);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
@@ -72,24 +65,17 @@ void libera_area (pframe_t* f);
 				  dell'area di visibilità elettromagnetica (compreso il mittente)
 * Par. Formali  :
 				pack : pacchetto in formato pseudo 802.11
-				f : pacchetto formattato
 ---------------------------------------------------------------------------- */
-void marca_frame_corrotto_e_spedisci (char* pack,pframe_t* f);
+void marca_errore_per_collisione (pframe_t* f,area_t* aree);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
-* Descrizione	: Svuota il buffer relativo all'area indicata da f
+* Descrizione	: Marca errore sull'area indicata da f e mette a zero il CRC del pacchetto 
 * Par. Formali  :
 				f : pacchetto formattato
+				aree : stato delle aree gestite dal mezzo
 ---------------------------------------------------------------------------- */
-void svuota_buffer_area (pframe_t* f);
-
-/* ------------------------------------------------------------------------- 
-* Nome			: carlo
-* Descrizione	: Verifica se è il momento di generare un pacchetto difettoso
-* Par. Ritorno  : Restituisce TRUE se bisogna generare un pacchetto difettoso
----------------------------------------------------------------------------- */
-char genera_errore_casuale (void);
+void genera_errore_casuale (area_t* aree);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
@@ -108,14 +94,6 @@ void spedisci_prima_parte_pacchetto (stato_t *s,area_t* aree);
 				aree : stato delle aree gestite dal mezzo
 ---------------------------------------------------------------------------- */
 void spedisci_ultimo_byte (stato_t *s,area_t* aree);
-
-/* ------------------------------------------------------------------------- 
-* Nome			: carlo
-* Descrizione	: Toglie dal buffer delle aree il pacchetto indicato da f
-* Par. Formali  :
-				f : pacchetto formattato
----------------------------------------------------------------------------- */
-void elimina_pacchetto_dal_buffer (pframe_t* f);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
@@ -142,6 +120,24 @@ char scaduto_timer (area_t* aree);
 				aree : stato delle aree gestite dal mezzo
 ---------------------------------------------------------------------------- */
 char pacchetto_in_area (area_t*  aree);
+
+/* ------------------------------------------------------------------------- 
+* Nome			: carlo
+* Descrizione	: Resetta i parametri dell'area
+* Par. Formali  :
+				index : indice dell'area (0..n)
+				aree : stato delle aree gestite dal mezzo
+---------------------------------------------------------------------------- */
+void reset_area (int index,area_t* aree);
+
+/* ------------------------------------------------------------------------- 
+* Nome			: carlo
+* Descrizione	: Mette a zero il CRC del pacchetto contenuto nell'area indicata dall'indice
+* Par. Formali  :
+				index : indice dell'area (0..n)
+				aree : stato delle aree gestite dal mezzo
+---------------------------------------------------------------------------- */
+void set_CRC0 (int index,area_t* aree);
 
 #endif
 

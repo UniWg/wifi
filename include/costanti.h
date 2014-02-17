@@ -20,6 +20,10 @@ typedef struct timeval timev_t;
 /* Dimensione del buffer di scmabio mezzo - stazioni */
 #define _maxbuflen 2000
 #define _Cerror _CBIRed		/* Colore dei messaggi di errore */
+/* Mezzo condiviso */
+#define _abilita_errori TRUE	/* TRUE : La generazione casuale di errori è abilitata */
+#define _percento_errori 10		/* Percentuale di errori casuali da produrre */
+
 
 /* ------------------------------------------------------------------------- */
 /* Sezione per le variabili di DEBUG */
