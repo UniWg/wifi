@@ -302,16 +302,16 @@ void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
 	else {
 		/* Vediamo se c'è almeno un pacchetto nelle aree */
 		if (pacchetto_in_area (aree) == TRUE) {			
+			
 			genera_errore_casuale (aree);
-			if (conflitto_di_destinazioni ()) { 	/* Ci sono più pacchetti per lo stesso mittente */
-				/* Spedisce un pacchetto a tutti con CRC = 0 e poi resetta la situazione */
-			}
-			else {
-				spedisci_prima_parte_pacchetto (s,aree);
-				if (scaduto_timer (aree) == TRUE) {
-					/* Spedisci il pacchetto e toglilo dal buffer */
-					spedisci_ultimo_byte (s,aree);
-				}
+			
+			controlla_conflitto_di_destinazioni (aree); /* verifica se ci sono piú pacchetti per lo stesso dest */
+			
+			spedisci_prima_parte_pacchetto (s,aree);
+			
+			if (scaduto_timer (aree) == TRUE) {
+				/* Spedisci il pacchetto e toglilo dal buffer */
+				spedisci_ultimo_byte (s,aree);
 			}
 		} 
 	}

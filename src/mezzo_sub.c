@@ -120,20 +120,16 @@ void occupa_area (pframe_t* f,area_t* aree,char* pack) {
 
 /* ------------------------------------------------------------------------- */
 void marca_errore_per_collisione (pframe_t* f,area_t* aree) {
-	int i,j,power2=1,s = mac2nsta ((*f).addr2);
+	int i,power2=1,s = mac2nsta ((*f).addr2);
 	
 	/* Potenzialmente sta4 potrebbe generare collisioni su entrambe le aree */
 	
 	for (i=0;i<_n_area;i++) {
 		if (_area_stax [s-1] & power2) {
-			
-			/*siamo qui.
-			stiamo ciclando sulle aree per vedere quelle che sono di competenza
-			della stazione.
-			viene marcato errore nell'area che risulta essere già occupata
-			potenzialmente sta4 potrebbe generare collisioni solo su una delle due
-			aree di sua competenza*/
-			
+			/* Siamo in una delle aree di appartenenza del pacchetto (potrebbe essere solo questa) */	
+			/* Marchiamo errore sull´area */
+			aree [i].errore_in_corso = TRUE;
+			set_CRC0 (i,aree);
 		}
 		power2 *= 2;
 	}
@@ -173,9 +169,32 @@ void genera_errore_casuale (area_t* aree) {
 }
 
 /* ------------------------------------------------------------------------- */
-char conflitto_di_destinazioni (void) {
+void get_dest (int index,area_t* aree,char* dest) {
+	pframe_t* f;
 
-	return (FALSE);
+	f = get_frame_buffer (aree [index].pack);	
+	strncpy (dest,(*f).addr1,6);
+}
+
+/* ------------------------------------------------------------------------- */
+void controlla_conflitto_di_destinazioni (area_t* aree) {
+	int i;
+	char d1 [6],d2 [6];
+	
+	/* Per semplicitá non cicliamo sulle aree, ma consideriamo solo le due aree attive */
+	
+	/* Ha senso fare la verifica solo se entrambe le aree hanno un pacchetto */
+	if ((aree[0].durata > 0) && (aree[1].durata > 0)) {	
+		get_dest (0,aree,d1);	
+		get_dest (1,aree,d2);
+		if (strncmp (d1,d2,6) == 0) {
+			/* I destinatari delle due aree sono uguali. Marchiamo errore su entrambe le aree */
+			for (i=0;i<=1;i++) {
+				aree [i].errore_in_corso = TRUE;
+				set_CRC0 (i,aree);
+			}
+		}
+	}
 }
 
 /* ------------------------------------------------------------------------- */

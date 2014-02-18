@@ -99,9 +99,10 @@ void spedisci_ultimo_byte (stato_t *s,area_t* aree);
 * Nome			: carlo
 * Descrizione	: Verifica se nel buffer delle aree ci sono più pacchetti per 
 					stesso mittente
-* Par. Ritorno  : Restituisce TRUE se ci sono più pacchetti per lo stesso mittente
+* Par. Formali  :
+				aree : stato delle aree gestite dal mezzo
 ---------------------------------------------------------------------------- */
-char conflitto_di_destinazioni (void);
+void controlla_conflitto_di_destinazioni (area_t* aree) ;
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
