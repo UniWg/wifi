@@ -5,31 +5,47 @@ const int _campo_stax [] = {_campo_sta1,_campo_sta2,_campo_sta3,_campo_sta4};
 const int _sta_di_stax [] = {_sta_di_sta1,_sta_di_sta2,_sta_di_sta3,_sta_di_sta4};
 const char _mac_stax [][17] = {_mac_sta1,_mac_sta2,_mac_sta3,_mac_sta4};
 
-/* ------------------------------------------------------------------------- */	
-void inizializza_stazioni (void) {
-	int i;
-	char* mac = (char*) malloc (sizeof (char) * 6);
-	
-	/* Inizializza la struttura dati di ogni stazione */
-	for (i=0; i<_nsta; i++) {
-		stazione_g [i].indice = i+1;
-		mac2str (_mac_stax [i],stazione_g [i].mac);	
-		stazione_g [i].campo = _sta_di_stax [i];
-		stazione_g [i].area = _area_stax [i];
-	}
 
-	free (mac);
-}
-/* ------------------------------------------------------------------------- 
-* Nome			: luca
-* Descrizione	: Inizializzo il frame per RTS
-* Par. Ritorno  : NULL
-* Par. Formali  :
-			- f	: frame del pacchetto da spedire
----------------------------------------------------------------------------- */
-pframe_t frame_RTS (pframe_t f){
-	int len, nwrite;
+/* ------------------------------------------------------------------------- */
+void packet_test (int ns) {
+	/* funzione di prova da CANCELLARE */
+	
+	
+	/* Ci colleghiamo al mezzo condiviso, gli spediamo un pacchetto e attendiamo la risposta */
+	sain_t mezzo;
+	int ris,n, nwrite, len;
 	char* fb; 		/* Frame buffer (con campo dati a zero) */
+	char macm [6];		/* mac del mezzo condiviso in formato 6 byte */
+	char buf [_maxbuflen];
+	pframe_t f;
+	pframe_t* fs;
+	BOOL trovato;
+	
+	/* Apriamo il socket -- IPV4, TCP */
+	if ((stafd_g [ns] = socket (AF_INET,SOCK_STREAM,0))<0) {
+		printf (_Cerror "Stazione : Errore nell'apertura del socket\n" _CColor_Off);
+		exit (-1);
+	}
+	DEBUG_STA "STA: Socket connesso\n" END_MC
+	
+	
+	/* per completezza qui bisogna aggiungere la bind */
+	
+	
+	/* assign our destination address */
+	memset ( &mezzo, 0, sizeof (mezzo) );
+	mezzo.sin_family = AF_INET;
+	mezzo.sin_addr.s_addr =	inet_addr (_indirizzoIP);
+	mezzo.sin_port = htons (_portaIP);
+
+	/* Richiesta di connessione */
+	ris = connect (stafd_g [ns], (sa_t*) &mezzo, sizeof (mezzo));
+	if (ris < 0)  {
+		printf (_Cerror"Stazione : connect() failed, Err: %d \"%s\"\n" _CColor_Off,errno,strerror(errno));
+		exit(1);
+	}
+	DEBUG_STA "STA: Stazione connessa al mezzo condiviso\n" END_MC
+	fflush(stdout);
 	
 	/* Impostiamo i campi del frame da spedire */
 	bzero (&f,sizeof (f));
@@ -53,172 +69,254 @@ pframe_t frame_RTS (pframe_t f){
 		nwrite+=n;
 	if(n<0) {
 		char msgerror[1024];
-		sprintf(msgerror,_Cerror"Stazione %d :  write() failed [err %d] "_CColor_Off, ns, errno);
+		sprintf(msgerror,_Cerror"Stazione :  write() failed [err %d] "_CColor_Off,errno);
 		perror(msgerror);
 		fflush(stdout);
 	}
 	
+	/* Ora rimaniamo in attesa bloccante di ricevere il frame di risposta */
+	trovato = FALSE;
+	do {
+		bzero (&buf,_maxbuflen);
+		do {
+			n = recv (stafd_g [ns],buf,_maxbuflen,0);
+		} while ((n<0) && (errno==EINTR));
+		/* Abbiamo ricevuto un frame */
+		/* Lo spacchettiamo e vediamo se è arrivato dal mezzo condiviso */
+		fs = get_frame_buffer (buf);
+		mac2str (_mac_mezzo,macm);
+		if (strncmp ((*fs).addr2,macm,6) != 0)
+			printf (_Csta "Stazione : Ricevuto un frame, ma non dal mezzo condiviso\n" _CColor_Off);
+		else {
+			/* Vediamo se è proprio il frame di risposta */
+			if ((*fs).scan == 2) {
+				printf (_Csta "Stazione %d : ricevuto frame di risposta. Pronta per comunicare\n" _CColor_Off,ns+1);
+				trovato = TRUE;
+			}
+			else	printf (_Csta "Stazione : Ricevuto un frame dal mezzo, ma senza il campo scan settato\n" _CColor_Off);
+		}
+	} while (!trovato);
 }
+
+/* ------------------------------------------------------------------------- */
+void inizializza_stazioni (void) {
+	int i;
+	char* mac = (char*) malloc (sizeof (char) * 6);
 	
-
-
-
-
-/* ------------------------------------------------------------------------- 
-* Nome			: luca
-* Descrizione	: Inizializzo la select
-* Par. Ritorno  : NULL
-* Par. Formali  :
-			- s	: struttura di stato
----------------------------------------------------------------------------- */
-void setup_select(stato_t *s){
-     
-    FD_ZERO (&(*s).Rset);
-    FD_ZERO (&(*s).Wset);
-    FD_SET ((*s).connfd, &(*s).Rset);
-}
-/* ------------------------------------------------------------------------- 
-* Nome			: luca
-* Descrizione	: Inizializza i socket delle stazioni e li collega al mezzo 
-                  condiviso 
-* Par. Ritorno  : NULL
-* Par. Formali  :
-			- ns: numero della stazione
----------------------------------------------------------------------------- */
-void collega_stazione (int ns) {
-    sain_t mezzo, local;
-    int ris;
-    
-    /* Apriamo il socket -- IPV4, TCP */
-	if ((stafd_g [ns] = socket (AF_INET, SOCK_STREAM, 0))<0) {
-		printf (_Cerror "Stazione %d : Errore nell'apertura del socket\n" _CColor_Off, ns);
-		exit (-1);
+	/* Inizializza la struttura dati di ogni stazione */
+	for (i=0;i<_nsta;i++) {
+		stazione_g [i].indice = i+1;
+		mac2str (_mac_stax [i],stazione_g [i].mac);	
+		stazione_g [i].campo = _sta_di_stax [i];
+		stazione_g [i].area = _area_stax [i];
 	}
-	DEBUG_STA "STA: Socket connesso\n" END_STA
-	
-	/*memset (&local, 0, sizeof(local));
-	local.sin_family = AF_INET;
-	local.sin_addr.s_addr = inet_addr (INADDR_ANY); 
-	local.sin_port = htons (0); */
-	
-	/* Associamo la struttura dati al socket */
-	/*if (bind (stafd_g [ns], (sa_t*) &local, sizeof (local))<0) {
-               printf (_Cerror"Stazione %d: bind() failed, Err: %d \"%s\"\n" _CColor_Off, ns, errno, strerror (errno));
-               exit(1);
-    }
-	DEBUG_STA "STA: Bind eseguita con successo\n" END_STA*/
-	
-	memset (&mezzo, 0, sizeof (mezzo));
-	mezzo.sin_family = AF_INET;
-	mezzo.sin_addr.s_addr =	inet_addr (_indirizzoIP);
-	mezzo.sin_port = htons (_portaIP);
-	
-	/* Richiesta di connessione */
-	ris = connect (stafd_g [ns], (sa_t*) &mezzo, sizeof (mezzo));
-	if (ris < 0)  {
-		printf (_Cerror"Stazione %d : connect() failed, Err: %d \"%s\"\n" _CColor_Off, ns, errno, strerror(errno));
-		exit(1);
-	}
-	DEBUG_STA "STA: Stazione connessa al mezzo condiviso\n" END_STA
-	fflush(stdout);
 
+	free (mac);
 }
-/* ------------------------------------------------------------------------- 
-* Nome			: luca
-* Descrizione	: Ciclo principale della stazione
-* Par. Ritorno  : NULL
-* Par. Formali  :
-			- s	: struttura di stato
-			- t : tempo di risveglio
-			- ns : numero della stazione
----------------------------------------------------------------------------- */
-void vita_stazione(stato_t *s, timev_t *t, int ns) {
-     int numero_eventi, save_errno, errno;
-     pframe_t f;
-	 int len, nwrite;
-	 char* fb; 		/* Frame buffer (con campo dati a zero) */
-	 char buf [_maxbuflen];
-     
-     
-   	do {
-        setup_select(s);
 
-		numero_eventi = select ((*s).fdtop+1,&(*s).Rset,&(*s).Wset,NULL,t);
-		/* SOLO PER DEBUG */
-		save_errno = errno;
-		printf ("nready=%d\n", numero_eventi);
-		errno = save_errno;
-		/* FINE SOLO PER DEBUG */
-
-	} while ((numero_eventi<0) && (errno==EINTR));
-	
-	if (numero_eventi < 0) {
-		printf (_Cerror "Stazione %d : Errore nella select\n" _CColor_Off, ns);
-		fflush (stderr);
-		exit (-1);
-	}	
-          
-          if (numero_eventi == 0) {
-          /* Il timeout è scaduto */
-                    if (write(stafd_g [ns], &(fb[nwrite]), len-nwrite )>0) {  /* Mi chiedo se ho una trasmissione in corso */
-                                
-                    }
-					else if ((f.packetl > 0) && ()){ /* Ho dei dati da spedire e il mezzo condiviso è disponibile*/
-							/**/
-					
-					}
-          }
-          else if (recv(stafd_g [ns], &buf, _maxbuflen, 0) > 0){
-               /* Ho ricevuto dei dati */              
-               if (f.crc == 0) { /* I dati sono corrotti? */
-                         /* Pacchetto non spedito. Errore, tocca liberare il canale */
-                         
-               }
-			   else if (){
-
-			   }
-          }
-}
-/* ------------------------------------------------------------------------- 
-* Nome			: luca
-* Descrizione	: Thread principale di ogni stazione
-* Par. Ritorno  : NULL
-* Par. Formali  :
-			- nsp : numero della stazione
----------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 void* main_sta_thread (void* nsp) {
-	int ns = *(int*)nsp-1;	/* togliamo 1 così ns è allineato con l'indice dell'array */
-    stato_t stato;
-    timev_t t;
+	int len,n,ntotal=0,nwrite,numero_eventi,ns = *(int*)nsp-1;	/* togliamo 1 così ns è allineato con l'indice dell'array */
+	timev_t t;
+	fd_set Rset,Wset;	
+	pframe_t f;
+	pframe_t* pf;
+	char* fb;
+	char buf [_max_frame_buffer_size];
+	char realbuf [_max_frame_buffer_size];
+	int one_time = 1;
+	
+	char* messaggio_test = "Messaggio di test da 1 verso 4";
 	
 	/* Attendiamo un paio di secondi in modo da dare il tempo al mezzo condiviso 
 		di mettersi in ascolto. Dopodichè possiamo effettuare la connessione anche noi */
 	sleep (2);
 
-	t.tv_sec = 1; t.tv_usec = 0;
-	/* Colleghiamo le stazioni al mezzo condiviso */
-    collega_stazione(ns);
-    
-    while(1){
-             vita_stazione(&stato, &t, ns);
-    }
-    
-}    
 	
+	packet_test (ns);			/* fase di collegamento al mezzo condiviso */
+	
+	/* Impostiamo il timeout di 100msec */
+	t.tv_sec = 0; t.tv_usec = 100000;
+	
+	while (1) {
+	
+	
+	
+		/* La stazione 1 scrive sulla 4 */	
+		if ((ns == 0) && (one_time == 1)) {
+			one_time = 0;
+			
+			bzero (&f,sizeof (f));
+			f.data = 1;		/* pacchetto dati */
+			f.tods = 0;		/* destinato ad una stazione */
+			f.scan = 0;		/* siamo già collegati, quindi non richiediamo nessuna scansione */
+			f.duration = 5;		/* Per il test la durata la lasciamo a 5. Dovrà poi essere calcolata in base
+									al tipo e alla lunghezza del frame */
+			f.packetl = _pframe_other_len + strlen (messaggio_test);	/* Lunghezza totale del pacchetto (base + dati) */
+			cpmac (_mac_sta4,f.addr1);					/* mac address del destinatario */
+			strncpy (f.addr2,stazione_g [ns].mac,6);	/* mac address della stazione che sta trasmettendo */
+			f.buf = messaggio_test;
+			f.crc = _crc_ok;
+
+			/* Convertiamo la struttura in array di byte */
+			fb = set_frame_buffer ((pframe_t*)&f);
+
+			/* Spedizione messaggio */
+			len = f.packetl;
+			nwrite=0;
+	
+			while( (n = write(stafd_g [ns], &(fb[nwrite]), len-nwrite)) >0 )
+				nwrite+=n;
+				
+			printf (_Csta "Stazione %d -- spedito messaggio : %s\n" _CColor_Off,ns+1,f.buf);
+		}
+	
+	
+	
+	
+	
+	
+	
+	
+		do {
+			/* La select ha bisogno di essere riconfigurata completamente ad ogni ciclo */
+			FD_ZERO (&Rset);
+			FD_ZERO (&Wset);
+			FD_SET (stafd_g [ns], &Rset);	/* Controlliamo in lettura il descrittore del mezzo condiviso */
+	
+			/* Ci interessa monitorare solo il descrittore del mezzo condiviso*/
+			numero_eventi = select (100,&Rset,&Wset,NULL,&t);
+		} while ((numero_eventi<0) && (errno==EINTR));
+	
+		if (numero_eventi < 0) {
+			printf (_Cerror "Stazione : Errore nella select di attesa connessioni\n" _CColor_Off);
+			fflush (stderr);
+			exit (-1);
+		}
+		
+		/* Ci interessano solo gli eventi in lettura sul nostro descrittore */
+		if (FD_ISSET (stafd_g [ns],&Rset)) {
+			printf ("Stazione %d -- Arrivato pacchetto \n",ns+1);
+		
+			/* Leggiamo il pacchetto arrivato */	
+			do {
+				n = recv (stafd_g [ns],buf,_max_frame_buffer_size,0);
+			} while ((n<0) && (errno==EINTR));
+			
+			
+			ntotal = appendi_pacchetto (realbuf,buf,ntotal,n);
+			if (complete_frame (ntotal,realbuf) == TRUE) {
+				/* Spacchettiamo e vediamo se è destinato a noi */
+				pf = get_frame_buffer (realbuf);
+	
+				if (mac2nsta ((*pf).addr1) == (ns + 1)) 
+					printf (_Csta "Stazione %d -- ricevuto messaggio : %s\n" _CColor_Off,ns+1,(*pf).buf);
+			}
+			else {
+				printf ("PACCHETTO NON COMPLETO\n");
+			}
+		}
+	}
+	
+	
+	/* Questa parte non viene mai eseguita. Viene messa solo per correttezza formale */
+	free (nsp);
+	return (0);
+}
+
+/* ------------------------------------------------------------------------- */
+/* DA CANCELLARE */
+void* main_sta_thread0 (void* nsp) {
+	int len,n,nwrite,ns = *(int*)nsp-1;	/* togliamo 1 così ns è allineato con l'indice dell'array */
+	char mac [18];
+	pframe_t f;
+	pframe_t* pf;
+	char* fb;
+	char* messaggio_test = "Messaggio di test";
+	char buf [_max_frame_buffer_size];
+	
+	/* Attendiamo un paio di secondi in modo da dare il tempo al mezzo condiviso 
+		di mettersi in ascolto. Dopodichè possiamo effettuare la connessione anche noi */
+	sleep (2);
+	
+	
+	
+	
+	
+	/* TEST spedizione -- da CANCELLARE ################################### */
+	packet_test (ns);
+	
+	if (ns == 1) {
+		sleep (1);
+		bzero (&f,sizeof (f));
+		f.data = 1;		/* pacchetto dati */
+		f.tods = 0;		/* destinato ad una stazione */
+		f.scan = 0;		/* siamo già collegati, quindi non richiediamo nessuna scansione */
+		f.duration = 5;		/* Per il test la durata la lasciamo a 5. Dovrà poi essere calcolata in base
+								al tipo e alla lunghezza del frame */
+		f.packetl = _pframe_other_len + strlen (messaggio_test);	/* Lunghezza totale del pacchetto (base + dati) */
+		cpmac (_mac_sta4,f.addr1);					/* mac address del destinatario */
+		strncpy (f.addr2,stazione_g [ns].mac,6);	/* mac address della stazione che sta trasmettendo */
+		f.buf = messaggio_test;
+		f.crc = _crc_ok;
+
+		/* Covertiamo la struttura in array di byte */
+		fb = set_frame_buffer ((pframe_t*)&f);
+
+		/* Spedizione messaggio */
+		len = f.packetl;
+		nwrite=0;
+	
+		while( (n = write(stafd_g [ns], &(fb[nwrite]), len-nwrite)) >0 )
+			nwrite+=n;
+		
+	} else sleep (3);
+	
+	/* Leggiamo il pacchetto arrivato 
+		lettura e scrittura dovranno essere gestite con una select */
+	
+	do {
+		n = recv (stafd_g [ns],buf,_max_frame_buffer_size,0);
+	} while ((n<0) && (errno==EINTR));
+
+	/* Spacchettiamo e vediamo se è destinato a noi */
+	pf = get_frame_buffer (buf);
+	
+	if (mac2nsta ((*pf).addr1) == (ns + 1)) 
+		printf (_Csta "Stazione %d -- ricevuto messaggio : %s\n" _CColor_Off,ns+1,(*pf).buf);
+	
+	
+	/* FINE TEST ########################################################## */
+	
+	
+	
+	
+	
+	while (1) {
+		str2mac (stazione_g [ns].mac,mac);
+		printf (_Csta "Stazione %d -- MAC: %s\n" _CColor_Off,ns+1,mac);
+		sleep (ns+1);
+	}
+	
+	/* Questa parte non viene mai eseguita. Viene messa solo per correttezza formale */
+	free (nsp);
+	return (0);
+}
+
 /* ------------------------------------------------------------------------- */
 void start_sta_thread (void) {
-	/* Lancia i thread di ogni stazione.
-		Ai thread verrà  passato solo il numero di stazione. La struttura
+	/* Lancia i thread di ogni stazione 
+		Ai thread verrà passato solo il numero di stazione. La struttura
 		dati relativa è accessibile a livello globale */
 	int r,i;
 	int *n;
 
-	for (i=1; i<=_nsta; i++) {
+	for (i=1;i<=_nsta;i++) {
 		n = (int*) malloc (sizeof(int));
 		*n = i;
-		r = pthread_create (&mc_thread_g, NULL, main_sta_thread, n);
+		r = pthread_create (&mc_thread_g,NULL,main_sta_thread,n);
 		if (r) {
-			printf ("Errore nella creazione del thread della stazione numero %d\n", i);
+			printf ("Errore nella creazione del thread della stazione numero %d\n",i);
 			printf ("Codice di errore riportato da pthread_create(): %d\n",r);
 			exit(-1);
 		}
@@ -226,4 +324,6 @@ void start_sta_thread (void) {
 }
 
 /* ------------------------------------------------------------------------- */
+
+
 

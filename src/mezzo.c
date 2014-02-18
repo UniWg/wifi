@@ -286,7 +286,7 @@ void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
 	if (numero_eventi > 0) {
 		/* Prendiamo il pacchetto dal socket ... */		
 		prendi_pacchetto (s,pack);
-		/* ... e lo psacchettimo */
+		/* ... e lo spacchettimo */
 		f = get_frame_buffer (pack);
 		if (area_libera (f,aree) == TRUE) {
 			/* occupiamo una o più aree per il tempo indicato in duration e mettiamo il pacchetto nell'area */
