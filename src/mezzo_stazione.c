@@ -115,7 +115,151 @@ void inizializza_stazioni (void) {
 }
 
 /* ------------------------------------------------------------------------- */
+
+void sta_select_setup (stato_sta_t *s) {
+	int i;
+	/* La select ha bisogno di essere riconfigurata completamente ad ogni ciclo */
+	FD_ZERO (&(*s).Rset);
+	FD_ZERO (&(*s).Wset);
+	FD_SET ((*s).stafd, &(*s).Rset);
+	/* Mettiamo in lettura e scrittura il descrittore del mezzo */
+	for (i=0;i<_nsta;i++) {
+		int fd = (*s).mezzofd;
+		FD_SET (fd,&(*s).Rset);
+		/*FD_SET (fd,&(*s).Wset);*/
+	}
+}
+
+/* ------------------------------------------------------------------------- */
+
+void vita_della_sta (stato_sta_t* s,timev_t t,int ns,sta_registry_t* reg) {
+	int numero_eventi,len;
+	char tmp_pack [_max_frame_buffer_size];		/* Pacchetto che arriva dal mezzo */
+
+	do {
+		sta_select_setup (s);
+		numero_eventi = select ((*s).fdtop+1,&(*s).Rset,&(*s).Wset,NULL,&t);
+	} while ((numero_eventi<0) && (errno==EINTR));
+	
+	if (numero_eventi < 0) {
+		printf (_Cerror "Stazione %d : Errore nella select di attesa connessioni\n" _CColor_Off,ns+1);
+		fflush (stderr);
+		exit (-1);
+	}
+	
+	
+	/****** IMPORTANTE 
+		TUTTE LE VOLTE CHE SI TRASMETTE VERSO IL MEZZO BISOGNA VERIFICARE LA DISPONIBILITÁ (EPOCH) long t_mc_busy;
+	*/
+	
+	/* #### ARRIVATO PACCHETTO ################################## */
+	if (numero_eventi > 0) {
+		len = prendi_pacchetto (s,tmp_pack);
+		if (pacchetto_completo (tmp_pack,len,reg)) {
+			if (CRC_uguale_0 (pack)) {
+				resetta_indice_progressivo (); /* questo non so esattamente se é utile */
+				if (stiamo_ricevendo (reg)) {
+					resetta_buffer_ricezione (reg);
+				}
+				imposta_tempo_occupazione_MC (_t_busy_error,0);
+			}
+			else if (pacchetto_nostro (reg)) {
+				if (is_CTS (reg)) {
+					if (spedito_RTS (reg)) {
+						spedisci_pacchetto_a_mezzo ();
+					}
+				}
+				else if (is_ACK (reg)) {
+					continua_trasmissione ();
+				}
+				else if (is_RTS (reg)) {
+					spedisci_CTS ();
+				}
+				else {
+					/* É arrivato un pacchetto dati */
+					accoda_pacchetto_a_buffer_ricezione_temporaneo (reg);
+				}
+			}
+			else if (is_RTS (reg)) {
+				aggiorna_mezzo_busy (); /* qui dentro si puó usare la funzion imposta_tempo_occupazione_MC */
+			}
+		}
+		else {
+			/* Il pacchetto non é completo. Accodiamo i dati arrivati ora a quelli arrivati in precedenza */
+			costruisci_pacchetto (tmp_pack,len,pack);
+			if (ricevuto_ultimo_pacchetto ()) {			/* regressivo == 1 */
+				accoda_buffer_temporaneo_a_quello_di_ricezione (reg);
+			}
+			spedisci_ACK ();
+		}
+	}
+	/* #### SCADUTO TIMEOUT DELLA SELECT (100ms) ################################## */
+	else {
+		if (stiamo_trasmettendo (reg)) {
+			if (scaduto_timout_ACK ()) {
+				continua_trasmissione ();
+			}
+		}
+		else if (!stiamo_ricevendo (reg)) {
+			if (buffer_locale_di_trasmissione_pieno ()) {
+				if (buffer_locale_trasmissione_allocato ()) {
+					if (mezzo_disponibile ()) {
+						invia_RTS ();						/* Questo deve impostare - trasmissione in corso - */
+					}
+				} 
+				else {
+					prepara_buffer_locale_trasmissione ();
+				}
+			}
+		}
+	}
+}
+
+/* ------------------------------------------------------------------------- */
+
 void* main_sta_thread (void* nsp) {
+	int ns = *(int*)nsp-1;	/* togliamo 1 così ns è allineato con l'indice dell'array */
+	stato_sta_t s;
+	timev_t t;
+	sta_registry_t reg;
+
+	/* Attendiamo un paio di secondi in modo da dare il tempo al mezzo condiviso 
+		di mettersi in ascolto. Dopodichè possiamo effettuare la connessione anche noi */
+	sleep (2);
+	
+	packet_test (ns);			/* fase di collegamento al mezzo condiviso */
+	s.nready = -1;
+	FD_ZERO (&s.Rset);
+	FD_ZERO (&s.Wset);
+	s.stafd = stafd_g [ns];
+	s.mezzofd = mezzofd_g;
+	s.fdtop = mezzofd_g;
+	
+	/* Inizializziamo il registro della stazione */
+	reg.pack [0] = 0; reg.pack [1] = 2; reg.pack [2] = 1;	/* Sequenza che indica pacchetto vuoto */
+	reg.t_mc_busy = 0;
+	reg.in_trasmissione = FALSE;
+	reg.in_ricezione = FALSE;
+	reg.RTS = FALSE;
+
+
+	/* Impostiamo il timeout per la select di 100msec */
+	t.tv_sec = 0; t.tv_usec = 100000;
+
+	
+	while (1) {
+		vita_della_sta (&s,t,ns,&reg);
+	}
+
+	return (0);
+}
+
+/* ------------------------------------------------------------------------- */
+
+/* DA CANCELLARE #############################################3 */
+
+
+void* main_sta_thread0 (void* nsp) {
 	int len,n,ntotal=0,nwrite,numero_eventi,ns = *(int*)nsp-1;	/* togliamo 1 così ns è allineato con l'indice dell'array */
 	timev_t t;
 	fd_set Rset,Wset;	
@@ -218,85 +362,6 @@ void* main_sta_thread (void* nsp) {
 		}
 	}
 	
-	
-	/* Questa parte non viene mai eseguita. Viene messa solo per correttezza formale */
-	free (nsp);
-	return (0);
-}
-
-/* ------------------------------------------------------------------------- */
-/* DA CANCELLARE */
-void* main_sta_thread0 (void* nsp) {
-	int len,n,nwrite,ns = *(int*)nsp-1;	/* togliamo 1 così ns è allineato con l'indice dell'array */
-	char mac [18];
-	pframe_t f;
-	pframe_t* pf;
-	char* fb;
-	char* messaggio_test = "Messaggio di test";
-	char buf [_max_frame_buffer_size];
-	
-	/* Attendiamo un paio di secondi in modo da dare il tempo al mezzo condiviso 
-		di mettersi in ascolto. Dopodichè possiamo effettuare la connessione anche noi */
-	sleep (2);
-	
-	
-	
-	
-	
-	/* TEST spedizione -- da CANCELLARE ################################### */
-	packet_test (ns);
-	
-	if (ns == 1) {
-		sleep (1);
-		bzero (&f,sizeof (f));
-		f.data = 1;		/* pacchetto dati */
-		f.tods = 0;		/* destinato ad una stazione */
-		f.scan = 0;		/* siamo già collegati, quindi non richiediamo nessuna scansione */
-		f.duration = 5;		/* Per il test la durata la lasciamo a 5. Dovrà poi essere calcolata in base
-								al tipo e alla lunghezza del frame */
-		f.packetl = _pframe_other_len + strlen (messaggio_test);	/* Lunghezza totale del pacchetto (base + dati) */
-		cpmac (_mac_sta4,f.addr1);					/* mac address del destinatario */
-		strncpy (f.addr2,stazione_g [ns].mac,6);	/* mac address della stazione che sta trasmettendo */
-		f.buf = messaggio_test;
-		f.crc = _crc_ok;
-
-		/* Covertiamo la struttura in array di byte */
-		fb = set_frame_buffer ((pframe_t*)&f);
-
-		/* Spedizione messaggio */
-		len = f.packetl;
-		nwrite=0;
-	
-		while( (n = write(stafd_g [ns], &(fb[nwrite]), len-nwrite)) >0 )
-			nwrite+=n;
-		
-	} else sleep (3);
-	
-	/* Leggiamo il pacchetto arrivato 
-		lettura e scrittura dovranno essere gestite con una select */
-	
-	do {
-		n = recv (stafd_g [ns],buf,_max_frame_buffer_size,0);
-	} while ((n<0) && (errno==EINTR));
-
-	/* Spacchettiamo e vediamo se è destinato a noi */
-	pf = get_frame_buffer (buf);
-	
-	if (mac2nsta ((*pf).addr1) == (ns + 1)) 
-		printf (_Csta "Stazione %d -- ricevuto messaggio : %s\n" _CColor_Off,ns+1,(*pf).buf);
-	
-	
-	/* FINE TEST ########################################################## */
-	
-	
-	
-	
-	
-	while (1) {
-		str2mac (stazione_g [ns].mac,mac);
-		printf (_Csta "Stazione %d -- MAC: %s\n" _CColor_Off,ns+1,mac);
-		sleep (ns+1);
-	}
 	
 	/* Questa parte non viene mai eseguita. Viene messa solo per correttezza formale */
 	free (nsp);

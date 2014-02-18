@@ -47,6 +47,15 @@ extern const char _mac_stax [][17];
  	char area;		/* area di visibilità elettromagnetica */
  } station_t;
  
+ typedef struct {
+	int nready;			/* risultato al termine della select */
+	fd_set Rset;		/* fd da controllare il lettura */
+	fd_set Wset;		/* fd da controllare in scrittura */
+	int fdtop; 			/* fd da monitorare con valore più alto */
+	int stafd;			/* fd della stazione */
+	int mezzofd;		/* fd del mezzo condiviso */
+} stato_sta_t;
+ 
 /* ------------------------------------------------------------------------- */
 /* Variabili globali */ 
 station_t stazione_g [_nsta];	/* identità delle stazioni */
