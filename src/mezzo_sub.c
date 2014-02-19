@@ -48,6 +48,7 @@ int out_of_time (stato_t *s) {
 void prendi_pacchetto (stato_t *s,char* pack) {
 	int j,n;
 
+	printf (_Cmezzo "Ho ricevuto un pacchetto\n" _CColor_Off);
 	/* Controlliamo quali descrittori sono settati */
 	for (j=0;j<_nsta;j++) {
 		if (FD_ISSET ((*s).clientfd [j],&(*s).Rset)) {
