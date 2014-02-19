@@ -53,7 +53,7 @@ typedef struct timeval timev_t;
 #endif
 /*------------------------------------*/
 #if STA_DEBUG == 1
-	#define DEBUG_STA printf(_CBIYellow "<DEB> "
+	#define DEBUG_STA printf(_CBIGreen "<DEB> "
 	#define END_STA _CColor_Off);
 #else
 	#define DEBUG_STA null_print(

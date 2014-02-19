@@ -28,17 +28,12 @@ void inizializza_stazioni (void) {
 			- s	: struttura di stato
 ---------------------------------------------------------------------------- */
 void setup_select(stato_sta_t *s){
-    int i;
+
     /* La select ha bisogno di essere riconfigurata completamente ad ogni ciclo */
     FD_ZERO (&(*s).Rset);
     FD_ZERO (&(*s).Wset);
     FD_SET ((*s).stafd, &(*s).Rset);
-    /* Mettiamo in lettura e scrittura il descrittore del mezzo */
-    for (i=0;i<_nsta;i++) {
-		int fd = (*s).mezzofd;
-		FD_SET (fd,&(*s).Rset);
-		/*FD_SET (fd,&(*s).Wset);*/
-	}
+
 }
 /* ------------------------------------------------------------------------- 
 * Nome			: luca
@@ -49,7 +44,7 @@ void setup_select(stato_sta_t *s){
 			- ns: numero della stazione
 ---------------------------------------------------------------------------- */
 void collega_stazione (int ns) {
-    sain_t mezzo, local;
+    sain_t mezzo;
     int ris;
     
     /* Apriamo il socket -- IPV4, TCP */
@@ -57,7 +52,8 @@ void collega_stazione (int ns) {
 		printf (_Cerror "Stazione %d : Errore nell'apertura del socket\n" _CColor_Off, ns);
 		exit (-1);
 	}
-	DEBUG_STA "STA: Socket connesso\n" END_STA
+ 
+	DEBUG_STA "STA : Socket connesso\n" END_STA 
 	
 	/*memset (&local, 0, sizeof(local));
 	local.sin_family = AF_INET;
@@ -97,40 +93,50 @@ void collega_stazione (int ns) {
 			- reg : registro della stazione
 ---------------------------------------------------------------------------- */
 void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
-     int numero_eventi, save_errno, errno;
-	 int len;
+     int save_errno, errno;
+	 int len, i;
      char pack [_max_frame_buffer_size];		/* Pacchetto che arriva dal mezzo */
-     
-     
+     char buf_t [_max_frame_buffer_size];		/* Buffer locale di trasmissione  (condiviso con app) */
+     char tmp_buf [_max_frame_buffer_size];		/* Buffer temporaneo */
+
+
+for(i=0; i<5; i++){
+
+	buf_t[i] = 'p';
+	tmp_buf[i] = 'o';
+printf("- %d: %c, %c \n ", (ns+1), buf_t[i], tmp_buf[i]);
+}
+
+	while(1) {	
    	do {
         setup_select(s);
 
-		numero_eventi = select ((*s).fdtop+1,&(*s).Rset,&(*s).Wset,NULL,&t);
+		(*s).nready = select ((*s).fdtop+1,&(*s).Rset,&(*s).Wset,NULL,&t);
 		/* SOLO PER DEBUG */
 		save_errno = errno;
-		printf ("nready=%d\n", numero_eventi);
+		printf ("nready=%d\n", (*s).nready);
 		errno = save_errno;
 		/* FINE SOLO PER DEBUG */
 
-	} while ((numero_eventi<0) && (errno==EINTR));
+	} while (((*s).nready<0) && (errno==EINTR));
 	
-	if (numero_eventi < 0) {
+	if ((*s).nready < 0) {
 		printf (_Cerror "Stazione %d : Errore nella select\n" _CColor_Off, ns);
 		fflush (stderr);
 		exit (-1);
 	}	
           /* È arrivato un pacchetto */ 
-          if (numero_eventi > 0) {		
+          if ((*s).nready > 0) {		
                   len = sta_prendi_pacchetto(s, ns, pack);
                   if (pacchetto_completo(pack, len)) {
-						if (CRC_zero(pack)) {
+						if (CRC_zero(pack)) {		/* Il pacchetto è corrotto */ 
 							reset_indice();
 							if (ricezione(reg)) {
 								reset_buffer();
 							}
-							imposta_tempo_occupazione_MC(_t_busy_error, 0,reg);
+							imposta_tempo_occupazione_MC(_t_busy_error, 0, reg);
 						}
-						else if (pacchetto_nostro()) {
+						else if (pacchetto_nostro(pack, ns)) {		/* Il pacchetto che è arrivato è nostro */
 							if (is_CTS(reg)) {
 								if (spedito_RTS()) {
 									spedisci_pacchetto();
@@ -154,16 +160,16 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 					
 				}
 		}
-		else {		/* Scaduto timeout della select */
+	else {		/* Scaduto timeout della select */
 			if (trasmissione(reg)) {
 				if (scaduto_timeout_ACK()) {
            			continua_trasmissione ();
 				}
 			}
-			else if (!buffer_locale_vuoto()) {
-				if (buffer_allocato()) {
-					if (mezzo_disponibile()) {
-						spedisci_RTS();
+			else if (buffer_trasmissione_vuoto(buf_t)) {
+				if (buffer_allocato(tmp_buf)) {
+					if (mezzo_disponibile(reg)) {
+						spedisci_RTS(reg, ns);
 					}
 				}
 				else {
@@ -171,7 +177,7 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 				}
 			}
 		}
-
+	}	
 }
 /* ------------------------------------------------------------------------- 
 * Nome			: luca
@@ -203,10 +209,9 @@ void* main_sta_thread (void* nsp) {
 	/* Colleghiamo le stazioni al mezzo condiviso */
     collega_stazione(ns);
     
-    while(1){
-             vita_stazione(&stato, t, ns, &reg);
-    }
-    
+    vita_stazione(&stato, t, ns, &reg);
+
+	return 0;
 }    
 	
 /* ------------------------------------------------------------------------- */
