@@ -121,7 +121,7 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 	}	
           /* È arrivato un pacchetto */ 
           if (numero_eventi > 0) {		
-                  len = sta_prendi_pacchetto(s, ns, pack);
+                  len = sta_prendi_pacchetto(s, pack);
                   if (pacchetto_completo(pack, len)) {
 						if (CRC_zero(pack)) {
 							reset_indice();

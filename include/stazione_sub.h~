@@ -104,15 +104,6 @@ void resetta_buffer_ricezione (sta_registry_t* reg);
 
 void reset_indice();
 
-void reset_buffer();
-
-int pacchetto_nostro();
-
-int is_CTS(sta_registry_t* reg);
-
-int spedito_RTS();
-
-void spedisci_pacchetto();
 /* ------------------------------------------------------------------------- */
 
 #endif
