@@ -99,10 +99,14 @@ list2* fifo_create (void) {
 
 /* --------------------------------- */
 void fifo_push (list2* s,char* pack) {
+	int i;
 	/* Inseriamo un elemento in testa */
 	list2* p=(list2*) malloc (sizeof (list2));
 	
-	strncpy (p->pack,pack,_max_frame_buffer_size);	/* Si potrebbe ottimizzare andando a leggere la lunghezza reale del pacchetto */
+	/*Si potrebbe ottimizzare andando a leggere la lunghezza reale del pacchetto */
+	for (i=0;i<_max_frame_buffer_size;i++)
+		p->pack [i]=pack [i];
+	
 	p->next = s->next;
 	p->prec = s;
 	s->next->prec = p;
@@ -111,9 +115,11 @@ void fifo_push (list2* s,char* pack) {
 
 /* --------------------------------- */
 char fifo_read (list2* s,char* pack) {
+	int i;
 	if (s->next == s)	return (FALSE);
 	else {
-		strncpy (pack,s->prec->pack,_max_frame_buffer_size);
+		for (i=0;i<_max_frame_buffer_size;i++)
+			pack [i]=s->prec->pack [i];
 		return (TRUE);
 	}
 }
@@ -121,6 +127,7 @@ char fifo_read (list2* s,char* pack) {
 /* --------------------------------- */
 char fifo_pop (list2* s,char* pack) {
 	list2* app;
+	int i;
 	
 	if (s->next == s)	return (FALSE);
 	else {
@@ -130,7 +137,8 @@ char fifo_pop (list2* s,char* pack) {
 		app->prec->next = s;
 		s->prec = app->prec;
 		
-		strncpy (pack,app->pack,_max_frame_buffer_size);
+		for (i=0;i<_max_frame_buffer_size;i++)
+			pack [i]=app->pack [i];
 		free (app);
 		return (TRUE);
 	}
