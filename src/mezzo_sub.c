@@ -254,7 +254,7 @@ void spedisci_prima_parte_pacchetto (stato_t *s,area_t* aree) {
 			for (k=0;k<_nsta;k++) {
 				/* and logico tra il numero della stazione e la configurazione del campo di visibilità del mittente */
 				/* in pratica serve per dedurre le stazioni raggiungibili */
-				if ((_campo_stax [k] & _sta_di_stax [mitt-1]) && (k!=(mitt-1))) {
+				if ((_campo_stax [k] & _sta_di_stax [mitt-1]) && (_area_stax [k] & (i+1)) && (k!=(mitt-1))) {
 					nwrite=0;
 					while ((n = write((*s).clientfd [k], aree [i].pack, len-nwrite)) >0)
 						nwrite+=n;
@@ -288,7 +288,7 @@ void spedisci_ultimo_byte (stato_t *s,area_t* aree) {
 			for (k=0;k<_nsta;k++) {
 				/* and logico tra il numero della stazione e la configurazione del campo di visibilità del mittente */
 				/* in pratica serve per dedurre le stazioni raggiungibili */
-				if ((_campo_stax [k] & _sta_di_stax [mitt-1]) && (k!=(mitt-1))) {
+				if ((_campo_stax [k] & _sta_di_stax [mitt-1]) && (_area_stax [k] & (i+1)) && (k!=(mitt-1))) {
 					nwrite=0;
 					while ((n = write((*s).clientfd [k], buf, len-nwrite)) >0)
 						nwrite+=n;
