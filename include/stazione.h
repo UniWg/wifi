@@ -64,7 +64,7 @@ int stafd_g [_nsta];			/* fd delle stazioni */
 /* ------------------------------------------------------------------------- */
 /* Prototipi delle funzioni */
 
-void inizializza_stazioni (void);
+
 /* ----------------------------------------------------------------------------
 * Nome			: 
 * Descrizione	: inizializza la struttura dati delle stazioni definendo:
@@ -72,12 +72,13 @@ void inizializza_stazioni (void);
 					- mac address
 					- campo di visibilità elettromagnetica
 ---------------------------------------------------------------------------- */
+void inizializza_stazioni (void);
 
-void start_sta_thread (void);
 /* ----------------------------------------------------------------------------
 * Nome			: 
 * Descrizione	: lancia i thread delle stazioni
 ---------------------------------------------------------------------------- */
+void start_sta_thread (void);
 
 #endif
 

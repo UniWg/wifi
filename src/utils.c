@@ -85,7 +85,64 @@ long getNOWmsec (void) {
 
 /* ------------------------------------------------------------------------- */
 
+/* --------------------------------- */
+list2* fifo_create (void) {
+	list2* s=(list2*) malloc (sizeof (list2));
+	
+	/* La fifo ha l'elemento sentinella sempre presente */
+	s->pack [0] = 0;
+	s->next=s;
+	s->prec=s;
+	
+	return (s);
+}
 
+/* --------------------------------- */
+void fifo_push (list2* s,char* pack) {
+	/* Inseriamo un elemento in testa */
+	list2* p=(list2*) malloc (sizeof (list2));
+	
+	strncpy (p->pack,pack,_max_frame_buffer_size);	/* Si potrebbe ottimizzare andando a leggere la lunghezza reale del pacchetto */
+	p->next = s->next;
+	p->prec = s;
+	s->next->prec = p;
+	s->next = p;
+}
+
+/* --------------------------------- */
+char fifo_read (list2* s,char* pack) {
+	if (s->next == s)	return (FALSE);
+	else {
+		strncpy (pack,s->prec->pack,_max_frame_buffer_size);
+		return (TRUE);
+	}
+}
+
+/* --------------------------------- */
+char fifo_pop (list2* s,char* pack) {
+	list2* app;
+	
+	if (s->next == s)	return (FALSE);
+	else {
+		app = s->prec;
+		
+		/* Scolleghiamo app */
+		app->prec->next = s;
+		s->prec = app->prec;
+		
+		strncpy (pack,app->pack,_max_frame_buffer_size);
+		free (app);
+		return (TRUE);
+	}
+}
+
+/* --------------------------------- */
+char fifo_is_empty (list2* s) {
+	if (s->next == s) return (TRUE);	/* Lista vuota */
+	else return (FALSE);
+}
+
+/* --------------------------------- */
 
 
 
