@@ -183,8 +183,8 @@ void remove_pframe (pframe_t* pf) {
 */
 
 char complete_frame (int n,char* buf) {
-	if (n<_pframe_other_len)
-		return (FALSE); 	/* La dimensione è inferiore alla minima */
+	if (n<15)				/* Dobbiamo avere sufficienti caratteri per leggere la len del pacchetto */
+		return (FALSE); 	
 
 	if (get_packet_len (buf) == n)
 		return (TRUE);
