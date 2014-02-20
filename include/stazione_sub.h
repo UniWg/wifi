@@ -35,25 +35,15 @@ typedef struct {
 /* ------------------------------------------------------------------------- */
 /* PROTOTIPI DELLE FUNZIONI */
 
-int sta_prendi_pacchetto (stato_sta_t *s, int ns, char* pack);
+int sta_prendi_pacchetto (stato_sta_t *s, int ns, char* pack, char* buf_loc);
 /* ----------------------------------------------------------------------------
 * Nome			: luca
 * Descrizione	: Riceve il pacchetto dati
 * Par. Ritorno	: Restituisce la lunghezza del pacchetto ricevuto
 * Par. Formali	: 
-			- s		: stato della stazione
-			- ns	: numero della stazione
-			- pack	: pacchetto in ricezione
----------------------------------------------------------------------------- */
-
-int pacchetto_completo (char* pack, int len);
-/* ----------------------------------------------------------------------------
-* Nome			: luca
-* Descrizione	: Verifica se il pacchetto è completo o no
-* Par. Ritorno	: Restituisce TRUE se il pacchetto è completo, FALSE altrimenti
-* Par. Formali	: 
-			- pack	: pacchetto in ricezione
-			- len	: lunghezza del pacchetto
+			- s			: stato della stazione
+			- ns		: numero della stazione
+			- buf_loc	: buffer locale in cui accodare dati
 ---------------------------------------------------------------------------- */
 
 char CRC_zero (char* pack);
@@ -61,6 +51,15 @@ char CRC_zero (char* pack);
 * Nome			: luca
 * Descrizione	: Verifica se il pacchetto è corrotto
 * Par. Ritorno	: FALSE se il pacchetto non è corrotto, TRUE altrimenti
+* Par. Formali	: 
+			- pack	: pacchetto in ricezione
+---------------------------------------------------------------------------- */
+
+int is_CTS(char* pack);
+/* ----------------------------------------------------------------------------
+* Nome			: luca
+* Descrizione	: Verifica se il pacchetto è un CTS
+* Par. Ritorno	: TRUE se il pacchetto è un CTS, FALSE altrimenti
 * Par. Formali	: 
 			- pack	: pacchetto in ricezione
 ---------------------------------------------------------------------------- */
@@ -131,15 +130,27 @@ char mezzo_disponibile(sta_registry_t* reg);
 			- reg	: registro della stazione
 ---------------------------------------------------------------------------- */
 
-void spedisci_RTS(sta_registry_t* reg, int ns);
+void spedisci_RTS(sta_registry_t* reg, stato_sta_t *s, int ns);
 /* ----------------------------------------------------------------------------
 * Nome			: luca
 * Descrizione	: Spedisce un RTS
 * Par. Ritorno	: NULL
 * Par. Formali	: 
 			- reg	: fregistro della stazione
+			- s		: stato della stazione
 			- ns	: numero della stazione
 ---------------------------------------------------------------------------- */
+
+char spedito_RTS(sta_registry_t* reg);
+/* ----------------------------------------------------------------------------
+* Nome			: luca
+* Descrizione	: Verifica se ho giá spedito un RTS
+* Par. Ritorno	: TRUE se l'ho giá spedito, FALSE altrimenti
+* Par. Formali	: 
+			- reg	: registro della stazione
+---------------------------------------------------------------------------- */
+
+void spedisci_pacchetto(char* pack, stato_sta_t *s, int ns);
 
 void resetta_buffer_ricezione (sta_registry_t* reg);
 
@@ -159,18 +170,16 @@ void reset_indice(void);
 void reset_buffer(void);
 
 
-int is_CTS(sta_registry_t* reg);
-
 int is_ACK(sta_registry_t* reg);
 
 int is_RTS(sta_registry_t* reg);
 
 
-int spedito_RTS(void);
+
 
 void spedisci_CTS(void);
 
-void spedisci_pacchetto(void);
+
 
 
 

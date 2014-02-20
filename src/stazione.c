@@ -27,12 +27,12 @@ void inizializza_stazioni (void) {
 * Par. Formali  :
 			- s	: struttura di stato
 ---------------------------------------------------------------------------- */
-void setup_select(stato_sta_t *s){
+void setup_select(stato_sta_t *s, int ns){
 
     /* La select ha bisogno di essere riconfigurata completamente ad ogni ciclo */
     FD_ZERO (&(*s).Rset);
     FD_ZERO (&(*s).Wset);
-    FD_SET ((*s).stafd, &(*s).Rset);
+    FD_SET (stafd_g[ns], &(*s).Rset);
 
 }
 /* ------------------------------------------------------------------------- 
@@ -66,11 +66,11 @@ void collega_stazione (int ns) {
                exit(1);
     }
 	DEBUG_STA "STA: Bind eseguita con successo\n" END_STA
-	
+	*/
 	memset (&mezzo, 0, sizeof (mezzo));
 	mezzo.sin_family = AF_INET;
 	mezzo.sin_addr.s_addr =	inet_addr (_indirizzoIP);
-	mezzo.sin_port = htons (_portaIP);*/
+	mezzo.sin_port = htons (_portaIP);
 	
 	/* Richiesta di connessione */
 	ris = connect (stafd_g [ns], (sa_t*) &mezzo, sizeof (mezzo));
@@ -94,27 +94,23 @@ void collega_stazione (int ns) {
 ---------------------------------------------------------------------------- */
 void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
      int save_errno, errno;
-	 int len, i;
-     char pack [_max_frame_buffer_size];		/* Pacchetto che arriva dal mezzo */
-     char buf_t [_max_frame_buffer_size];		/* Buffer locale di trasmissione  (condiviso con app) */
-     char tmp_buf [_max_frame_buffer_size];		/* Buffer temporaneo */
+	 int len;
+     char *pack;								/* Pacchetto che arriva dal mezzo */
+	 char *buf_loc;								/* Buffer locale in cui accodare dati */
 
 
-for(i=0; i<5; i++){
 
-	buf_t[i] = 'p';
-	tmp_buf[i] = 'o';
-printf("- %d: %c, %c \n ", (ns+1), buf_t[i], tmp_buf[i]);
-}
+	pack = malloc(_max_frame_buffer_size * sizeof(char));
+	buf_loc = malloc(_max_frame_buffer_size * sizeof(char));
 
 	while(1) {	
    	do {
-        setup_select(s);
+        setup_select(s, ns);
 
-		(*s).nready = select ((*s).fdtop+1,&(*s).Rset,&(*s).Wset,NULL,&t);
+		(*s).nready = select (1000,&(*s).Rset,&(*s).Wset,NULL,&t); /* bisogna mettere un valore appropriato al descrittore massimo */
 		/* SOLO PER DEBUG */
 		save_errno = errno;
-		printf ("nready=%d\n", (*s).nready);
+		/*printf ("nready=%d\t", (*s).nready);*/
 		errno = save_errno;
 		/* FINE SOLO PER DEBUG */
 
@@ -126,9 +122,9 @@ printf("- %d: %c, %c \n ", (ns+1), buf_t[i], tmp_buf[i]);
 		exit (-1);
 	}	
           /* È arrivato un pacchetto */ 
-          if ((*s).nready > 0) {		
-                  len = sta_prendi_pacchetto(s, ns, pack);
-                  if (pacchetto_completo(pack, len)) {
+          if ((*s).nready > 0) {
+                  len = sta_prendi_pacchetto(s, ns, pack, buf_loc);
+                  if (complete_frame(len, buf_loc)) {
 						if (CRC_zero(pack)) {		/* Il pacchetto è corrotto */ 
 							reset_indice();
 							if (ricezione(reg)) {
@@ -137,9 +133,9 @@ printf("- %d: %c, %c \n ", (ns+1), buf_t[i], tmp_buf[i]);
 							imposta_tempo_occupazione_MC(_t_busy_error, 0, reg);
 						}
 						else if (pacchetto_nostro(pack, ns)) {		/* Il pacchetto che è arrivato è nostro */
-							if (is_CTS(reg)) {
-								if (spedito_RTS()) {
-									spedisci_pacchetto();
+							if (is_CTS(pack)) {
+								if (spedito_RTS(reg)) {
+									spedisci_pacchetto(pack, s, ns);
 								}
 							}
 							else if (is_ACK(reg)) {
@@ -166,15 +162,14 @@ printf("- %d: %c, %c \n ", (ns+1), buf_t[i], tmp_buf[i]);
            			continua_trasmissione ();
 				}
 			}
-			else if (buffer_trasmissione_vuoto(buf_t)) {
-				if (buffer_allocato(tmp_buf)) {
-					if (mezzo_disponibile(reg)) {
-						spedisci_RTS(reg, ns);
-					}
-				}
-				else {
+			else if (buffer_trasmissione_vuoto(buf_loc)) {
+				if (!buffer_allocato(buf_loc)) {
 					prepara_buffer();
 				}
+				if (mezzo_disponibile(reg)) {	
+					spedisci_RTS(reg, s, ns);
+				}
+
 			}
 		}
 	}	
@@ -191,7 +186,8 @@ void* main_sta_thread (void* nsp) {
     stato_sta_t stato;
     timev_t t;
 	sta_registry_t reg;
-	
+
+
 	/* Attendiamo un paio di secondi in modo da dare il tempo al mezzo condiviso 
 		di mettersi in ascolto. Dopodichè possiamo effettuare la connessione anche noi */
 	sleep (2);
@@ -209,10 +205,14 @@ void* main_sta_thread (void* nsp) {
 	/* Colleghiamo le stazioni al mezzo condiviso */
     collega_stazione(ns);
     
+	sleep (2);
+	
+
     vita_stazione(&stato, t, ns, &reg);
 
 	return 0;
-}    
+
+}  
 	
 /* ------------------------------------------------------------------------- */
 void start_sta_thread (void) {

@@ -52,7 +52,7 @@ extern const char _mac_stax [][17];
 	fd_set Rset;		/* fd da controllare il lettura */
 	fd_set Wset;		/* fd da controllare in scrittura */
 	int fdtop; 			/* fd da monitorare con valore più alto */
-	int stafd;			/* fd della stazione */
+	/*int stafd;*/			/* fd della stazione */
 	int mezzofd;		/* fd del mezzo condiviso */
 } stato_sta_t;
  
