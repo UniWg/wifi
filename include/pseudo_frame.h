@@ -121,6 +121,19 @@ void remove_pframe (pframe_t* pf);
 ---------------------------------------------------------------------------- */
 char complete_frame (int n,char* buf);
 
+/* ----------------------------------------------------------------------------
+* Nome			: carlo
+* Descrizione	: costruisce un pacchetto dati
+* Par. Ritorno  : restituisce il pacchetto 
+* Par. Formali  :
+			- messaggio : messaggio da inserire nel campo dati
+			- msglen : lunghezza del messaggio
+			- seqctrl : numero di sequenza del pacchetto
+			- mitt : numero del mittente (1..4)
+			- dest : numero del destinatario (1..4)
+---------------------------------------------------------------------------- */
+char* make_pseduo_frame (char* messaggio,int msglen,int seqctrl,int mitt,int dest);
+
 #endif
 
 

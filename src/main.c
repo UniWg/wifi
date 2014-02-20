@@ -21,6 +21,9 @@ void start_thread (void) {
 	
 	/* Threads delle stazioni */
 	start_sta_thread ();
+	
+	/* Threads delle applicazioni */
+	start_app_thread ();
 }
 
 /* ------------------------------------------------------------------------- */

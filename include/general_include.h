@@ -14,14 +14,14 @@
 #include <arpa/inet.h>
 
 #include "pseudo_frame.h"
-#include "applica.h"
 #include "costanti.h"
+#include "utils.h"
 #include "colors.h"
 #include "mezzo.h"
 #include "mezzo_sub.h"
 #include "read_write.h"
 #include "stazione.h"
 #include "stazione_sub.h"
-#include "utils.h"
+#include "applica.h"
 
 #endif

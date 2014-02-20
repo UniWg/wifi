@@ -126,6 +126,42 @@ pframe_t* get_frame_buffer (char* buf) {
 
 /* ------------------------------------------------------------------------- */
 
+char* make_pseduo_frame (char* messaggio,int msglen,int seqctrl,int mitt,int dest) {
+	pframe_t *p = (pframe_t*) malloc (sizeof (pframe_t));
+	char mitt_mac [6];
+	char dest_mac [6];
+	char* fb;
+	
+	/* Dato il numero dell'applicazione, ricaviamo il mac6 */
+	mac2str (_mac_stax [mitt-1],mitt_mac);
+	mac2str (_mac_stax [dest-1],dest_mac);
+	
+	/* Impostiamo i dati del pacchetto */
+	(*p).data = 1;					/* pacchetto dati */
+	(*p).dtype = 1;					/* tipo di dati 1 */
+	(*p).tods = 0;					/* Il pacchetto non e' per il mz ma per un'altra stazione */
+	(*p).fromds = 0;
+	(*p).rts = 0;						
+	(*p).cts = 0;
+	(*p).scan = 0;
+	if (msglen < 100) (*p).duration = 5; else (*p).duration = 20;
+	(*p).packetl = _pframe_other_len + msglen;
+	strncpy ((*p).addr1,dest_mac,6);
+	strncpy ((*p).addr2,mitt_mac,6);
+	strncpy ((*p).addr3,"000000",6);
+	strncpy ((*p).addr4,"000000",6);
+	(*p).seqctrl = seqctrl;
+	(*p).buf = (char*)&messaggio;
+	(*p).crc = _crc_ok;	
+	
+	/* Impacchettiamo */
+	fb = set_frame_buffer (p);
+
+	return (fb);
+}
+
+/* ------------------------------------------------------------------------- */
+
 void remove_frame_buffer (char* buffer) {
 	/* Liberiamo lo spazio occupato dal buffer */
 	free (buffer);
@@ -147,8 +183,8 @@ void remove_pframe (pframe_t* pf) {
 */
 
 char complete_frame (int n,char* buf) {
-	if (n<_pframe_other_len)
-		return (FALSE); 	/* La dimensione è inferiore alla minima */
+	if (n<15)				/* Dobbiamo avere sufficienti caratteri per leggere la len del pacchetto */
+		return (FALSE); 	
 
 	if (get_packet_len (buf) == n)
 		return (TRUE);

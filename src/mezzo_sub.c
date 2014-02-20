@@ -109,6 +109,11 @@ void occupa_area (pframe_t* f,area_t* aree,char* pack) {
 				printf ("<occupa_area> errore critico. \"Durata\" area %d non è a zero",i+1);  
 				exit (1);
 			}
+			
+			
+			/* LA DURATA DEVE ESSERE PRESA DAL PACCHETTO */
+			
+			
 			aree [i].durata = getNOWmsec ();	/* epoch msec */
 			if ((*f).rts == 1 || (*f).cts || (*f).packetl < 100)	aree [i].durata += _packet_duration_low;
 			else 	aree [i].durata += _packet_duration_hi;

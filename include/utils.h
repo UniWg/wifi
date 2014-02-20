@@ -1,6 +1,12 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
+/* Elemento della lista circolare */
+typedef struct circle_list {
+	char pack [_max_frame_buffer_size];
+	struct circle_list *prec,*next;
+} list2;
+
 /* ----------------------------------------------------------------------------
 * Nome			: 
 * Descrizione	: copia il mac address dal formato esteso al formato a 6 byte.
@@ -49,6 +55,53 @@ int mac2nsta (char* mac);
 * Par. Ritorno  : tempo attuale in millisecondi
 ---------------------------------------------------------------------------- */
 long getNOWmsec (void);
+
+/* ----------------------------------------------------------------------------
+* Nome			: 
+* Descrizione	: Crea una lista circolare con la sentinella inizializzata
+* Par. Ritorno  : Restituisce il puntatore alle sentinella
+---------------------------------------------------------------------------- */
+list2* fifo_create (void); 
+
+/* ----------------------------------------------------------------------------
+* Nome			: 
+* Descrizione	: Inserisce un elemento in testa alla lista circolare
+* Par. Formali  :
+			- s : sentinella
+			- pack : pacchetto dati 
+---------------------------------------------------------------------------- */
+void fifo_push (list2* s,char* pack);
+
+/* ----------------------------------------------------------------------------
+* Nome			: 
+* Descrizione	: Legge l'elemento in testa alla coda senza cancellarlo
+* Par. Ritorno  : Restituisce FALSE se non ci sono elementi nella coda 
+* Par. Formali  :
+			- s : sentinella
+			- pack : pacchetto dati (viene restituito)
+---------------------------------------------------------------------------- */
+char fifo_read (list2* s,char* pack);
+
+/* ----------------------------------------------------------------------------
+* Nome			: 
+* Descrizione	: Rimuove l'elemento dalla testa della coda e lo restituisce
+* Par. Ritorno  : Restituisce FALSE se non ci sono elementi nella coda 
+* Par. Formali  :
+			- s : sentinella
+			- pack : pacchetto dati (viene restituito)
+---------------------------------------------------------------------------- */
+char fifo_pop (list2* s,char* pack);
+
+/* ----------------------------------------------------------------------------
+* Nome			: 
+* Descrizione	: Verifica se la fifo é vuota
+* Par. Ritorno  : Restituisce TRUE se non ci sono elementi nella fifo
+* Par. Formali  :
+			- s : sentinella
+---------------------------------------------------------------------------- */
+char fifo_is_empty (list2* s);
+
+
 
 #endif
 
