@@ -182,7 +182,7 @@ void remove_pframe (pframe_t* pf) {
 	se il valore di _pack_len corrisponde con la lunghezza totale
 */
 
-char complete_frame (int n,char* buf) {
+char complete_frame (int n, char* buf) {
 	if (n<15)				/* Dobbiamo avere sufficienti caratteri per leggere la len del pacchetto */
 		return (FALSE); 	
 

@@ -119,7 +119,7 @@ void remove_pframe (pframe_t* pf);
 			- n : numero di byte attualmente ricevuti
 			- buf : buffer del pacchetto
 ---------------------------------------------------------------------------- */
-char complete_frame (int n,char* buf);
+char complete_frame (int n, char* buf);
 
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
@@ -134,6 +134,7 @@ char complete_frame (int n,char* buf);
 ---------------------------------------------------------------------------- */
 char* make_pseduo_frame (char* messaggio,int msglen,int seqctrl,int mitt,int dest);
 
+int get_packet_len (char* buf);
 #endif
 
 

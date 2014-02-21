@@ -45,7 +45,13 @@ void setup_select(stato_sta_t *s, int ns){
 ---------------------------------------------------------------------------- */
 void collega_stazione (int ns) {
     sain_t mezzo;
-    int ris;
+    int ris, nwrite, len, n;
+	pframe_t f;
+	pframe_t *fs;
+	char macm [6];		/* mac del mezzo condiviso in formato 6 byte */
+	char* fb;
+	char buf [_maxbuflen];
+	char trovato;
     
     /* Apriamo il socket -- IPV4, TCP */
 	if ((stafd_g [ns] = socket (AF_INET, SOCK_STREAM, 0))<0) {
@@ -81,6 +87,55 @@ void collega_stazione (int ns) {
 	DEBUG_STA "STA: Stazione connessa al mezzo condiviso\n" END_STA
 	fflush(stdout);
 
+	/* Impostiamo i campi del frame da spedire */
+	bzero (&f,sizeof (f));
+	f.data = 0;									/* frame di controllo */
+	f.tods = 1;									/* destinato al mezzo condiviso */
+	f.scan = 1;									/* scansione - utilizzata per richiedere il collegamento al mezzo */
+	f.duration = 5;	
+	f.packetl = _pframe_other_len;				/* Lunghezza base del pacchetto (non ci sono dati) */
+	cpmac (_mac_mezzo,f.addr1);					/* mac address del mezzo */
+	strncpy (f.addr2,stazione_g [ns].mac,6);	/* mac address della stazione che sta trasmettendo */
+	f.crc = _crc_ok;
+
+	/* Covertiamo la struttura in array di byte */
+	fb = set_frame_buffer(&f);
+
+	/* Spedizione messaggio */
+	len = f.packetl;
+	nwrite=0;
+	
+	while( (n = write(stafd_g [ns], &(fb[nwrite]), len-nwrite)) >0 )
+		nwrite+=n;
+	if(n<0) {
+		char msgerror[1024];
+		sprintf(msgerror,_Cerror"Stazione :  write() failed [err %d] "_CColor_Off,errno);
+		perror(msgerror);
+		fflush(stdout);
+	}
+	
+	/* Ora rimaniamo in attesa bloccante di ricevere il frame di risposta */
+	trovato = FALSE;
+	do {
+		bzero (&buf, _maxbuflen);
+		do {
+			n = recv (stafd_g [ns], buf, _maxbuflen,0);
+		} while ((n<0) && (errno==EINTR));
+		/* Abbiamo ricevuto un frame */
+		/* Lo spacchettiamo e vediamo se è arrivato dal mezzo condiviso */
+		fs = get_frame_buffer (buf);
+		mac2str (_mac_mezzo,macm);
+		if (strncmp ((*fs).addr2,macm,6) != 0)
+			printf (_Csta "Stazione : Ricevuto un frame, ma non dal mezzo condiviso\n" _CColor_Off);
+		else {
+			/* Vediamo se è proprio il frame di risposta */
+			if ((*fs).scan == 2) {
+				printf (_Csta "Stazione %d : ricevuto frame di risposta. Pronta per comunicare\n" _CColor_Off,ns+1);
+				trovato = TRUE;
+			}
+			else	printf (_Csta "Stazione : Ricevuto un frame dal mezzo, ma senza il campo scan settato\n" _CColor_Off);
+		}
+	} while (!trovato);
 }
 /* ------------------------------------------------------------------------- 
 * Nome			: luca
@@ -95,13 +150,6 @@ void collega_stazione (int ns) {
 void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
      int save_errno, errno;
 	 int len;
-     char *pack;								/* Pacchetto che arriva dal mezzo */
-	 char *buf_loc;								/* Buffer locale in cui accodare dati */
-
-
-
-	pack = malloc(_max_frame_buffer_size * sizeof(char));
-	buf_loc = malloc(_max_frame_buffer_size * sizeof(char));
 
 	while(1) {	
    	do {
@@ -123,19 +171,20 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 	}	
           /* È arrivato un pacchetto */ 
           if ((*s).nready > 0) {
-                  len = sta_prendi_pacchetto(s, ns, pack, buf_loc);
-                  if (complete_frame(len, buf_loc)) {
-						if (CRC_zero(pack)) {		/* Il pacchetto è corrotto */ 
+                  len = sta_prendi_pacchetto(s, reg);
+                  if (frame_completo(len, reg)) {
+						(*reg).x = 0;
+						if (CRC_zero(reg)) {		/* Il pacchetto è corrotto */ 
 							reset_indice();
 							if (ricezione(reg)) {
 								reset_buffer();
 							}
 							imposta_tempo_occupazione_MC(_t_busy_error, 0, reg);
 						}
-						else if (pacchetto_nostro(pack, ns)) {		/* Il pacchetto che è arrivato è nostro */
-							if (is_CTS(pack)) {
+						else if (pacchetto_nostro(reg)) {		/* Il pacchetto che è arrivato è nostro */
+							if (is_CTS(reg)) {
 								if (spedito_RTS(reg)) {
-									spedisci_pacchetto(pack, s, ns);
+									spedisci_pacchetto(reg, s);
 								}
 							}
 							else if (is_ACK(reg)) {
@@ -145,12 +194,13 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 								spedisci_CTS();
 							}
 							else {  /* Allora si tratta di un pacchetto */
-								aggiungi_pacchetto(pack);
+								aggiungi_pacchetto(reg);
 							}
 						}
 						else if (is_RTS(reg)) {
-							aggiorna_MC();
+							aggiorna_MC(reg);
 						}
+						/* scarta il pacchetto */
 				}
 				else {		/* Il pacchetto non è completo, bisogna accodare i dati nel buffer */
 					
@@ -162,14 +212,16 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
            			continua_trasmissione ();
 				}
 			}
-			else if (buffer_trasmissione_vuoto(buf_loc)) {
-				if (!buffer_allocato(buf_loc)) {
-					prepara_buffer();
-				}
-				if (mezzo_disponibile(reg)) {	
-					spedisci_RTS(reg, s, ns);
-				}
+			else if (!ricezione(reg)) {
+				 if (buffer_trasmissione_vuoto(reg)) {
+					if (!buffer_allocato(reg)) {
+						prepara_buffer();
+					}
+					if (mezzo_disponibile(reg)) {	
+						spedisci_RTS(reg, s);
+					}
 
+				 }
 			}
 		}
 	}	
@@ -187,27 +239,32 @@ void* main_sta_thread (void* nsp) {
     timev_t t;
 	sta_registry_t reg;
 
-
 	/* Attendiamo un paio di secondi in modo da dare il tempo al mezzo condiviso 
 		di mettersi in ascolto. Dopodichè possiamo effettuare la connessione anche noi */
 	sleep (2);
 
 	/* Inizializziamo il registro della stazione */
-	reg.pack [0] = 0; reg.pack [1] = 2; reg.pack [2] = 1;	/* Sequenza che indica pacchetto vuoto */
+	reg.BLT [0] = 0; reg.BLT [1] = 2; reg.BLT [2] = 1;	/* Sequenza che indica pacchetto vuoto */
+	reg.BLR [0] = 0; reg.BLR [1] = 2; reg.BLR [2] = 1;	/* Sequenza che indica pacchetto vuoto */
+	reg.x = 0;
+	reg.LTT = fifo_create();							
+	reg.LTR = fifo_create();
 	reg.t_mc_busy = 0;
 	reg.in_trasmissione = FALSE;
 	reg.in_ricezione = FALSE;
 	reg.RTS = FALSE;
-
+	reg.ns = ns;
+	
+	/* Inizializzamo il buffer locale */
+	
 	/* Impostiamo il timeout per la select di 100 msec. */
 	t.tv_sec = 0; t.tv_usec = 100000;
 
 	/* Colleghiamo le stazioni al mezzo condiviso */
     collega_stazione(ns);
-    
+
 	sleep (2);
 	
-
     vita_stazione(&stato, t, ns, &reg);
 
 	return 0;

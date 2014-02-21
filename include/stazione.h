@@ -55,7 +55,8 @@ extern const char _mac_stax [][17];
 	/*int stafd;*/			/* fd della stazione */
 	int mezzofd;		/* fd del mezzo condiviso */
 } stato_sta_t;
- 
+
+
 /* ------------------------------------------------------------------------- */
 /* Variabili globali */ 
 station_t stazione_g [_nsta];	/* identità delle stazioni */
