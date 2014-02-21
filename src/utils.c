@@ -116,7 +116,7 @@ void fifo_push (list2* s,char* pack) {
 /* --------------------------------- */
 char fifo_read (list2* s,char* pack) {
 	int i;
-	if (s->next == s)	return (FALSE);
+	if (s->prec == s)	return (FALSE);
 	else {
 		for (i=0;i<_max_frame_buffer_size;i++)
 			pack [i]=s->prec->pack [i];
@@ -125,11 +125,28 @@ char fifo_read (list2* s,char* pack) {
 }
 
 /* --------------------------------- */
+char fifo_read_deep (list2* s,char* pack,int n) {
+	int i;
+	list2* p;
+	
+	/* Ci portiamo sull'elemento richiesto ... */
+	for (i=0;i<n;i++) {
+		p = s->prec;
+		if (p == s) 	return (FALSE);
+	}
+	
+	/* ... e lo leggiamo */	
+	for (i=0;i<_max_frame_buffer_size;i++)
+		pack [i]=p->pack [i];
+	return (TRUE);	
+}
+
+/* --------------------------------- */
 char fifo_pop (list2* s,char* pack) {
 	list2* app;
 	int i;
 	
-	if (s->next == s)	return (FALSE);
+	if (s->prec == s)	return (FALSE);
 	else {
 		app = s->prec;
 		
@@ -142,6 +159,22 @@ char fifo_pop (list2* s,char* pack) {
 		free (app);
 		return (TRUE);
 	}
+}
+
+/* --------------------------------- */
+void fifo_reset (list2* s) {
+	list2* p;
+	
+	/* Cancelliamo gli elementi ... */
+	p = s->next;
+	while (p != s) {
+		p = p->next;
+		free (p->prec);
+	}
+	
+	/* ... e richiudiamo la sentinella su se stessa */
+	s->next = s;
+	s->prec = s;
 }
 
 /* --------------------------------- */

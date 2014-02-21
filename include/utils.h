@@ -84,6 +84,17 @@ char fifo_read (list2* s,char* pack);
 
 /* ----------------------------------------------------------------------------
 * Nome			: 
+* Descrizione	: Legge l'ennesimo elemento rispettando l'ordine fifo
+* Par. Ritorno  : Restituisce FALSE se l'ennesimo elemento non esiste
+* Par. Formali  :
+			- s : sentinella
+			- pack : pacchetto dati (viene restituito)
+			- n : numero dell'elemento
+---------------------------------------------------------------------------- */
+char fifo_read_deep (list2* s,char* pack,int n);
+
+/* ----------------------------------------------------------------------------
+* Nome			: 
 * Descrizione	: Rimuove l'elemento dalla testa della coda e lo restituisce
 * Par. Ritorno  : Restituisce FALSE se non ci sono elementi nella coda 
 * Par. Formali  :
@@ -91,6 +102,14 @@ char fifo_read (list2* s,char* pack);
 			- pack : pacchetto dati (viene restituito)
 ---------------------------------------------------------------------------- */
 char fifo_pop (list2* s,char* pack);
+
+/* ----------------------------------------------------------------------------
+* Nome			: 
+* Descrizione	: Elimina gli elementi della fifo senza cancellare la sentinella
+* Par. Formali  :
+			- s : sentinella
+---------------------------------------------------------------------------- */
+void fifo_reset (list2* s);
 
 /* ----------------------------------------------------------------------------
 * Nome			: 
