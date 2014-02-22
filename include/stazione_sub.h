@@ -208,7 +208,7 @@ int is_ACK(sta_registry_t* reg);
 
 
 
-void spedisci_CTS(void);
+void spedisci_CTS(sta_registry_t* reg, stato_sta_t *s);
 
 
 

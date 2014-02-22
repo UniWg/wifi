@@ -173,7 +173,7 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
           if ((*s).nready > 0) {
                   len = sta_prendi_pacchetto(s, reg);
                   if (frame_completo(len, reg)) {
-						(*reg).x = 0;
+						
 						if (CRC_zero(reg)) {		/* Il pacchetto è corrotto */ 
 							reset_indice();
 							if (ricezione(reg)) {
@@ -191,7 +191,7 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 								continua_trasmissione ();
 							}
 							else if (is_RTS(reg)) {
-								spedisci_CTS();
+								spedisci_CTS(reg, s);
 							}
 							else {  /* Allora si tratta di un pacchetto */
 								aggiungi_pacchetto(reg);
@@ -213,7 +213,7 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 				}
 			}
 			else if (!ricezione(reg)) {
-				 if (buffer_trasmissione_vuoto(reg)) {
+				 if (buffer_trasmissione_vuoto(reg)) {		/* <-- DA COMPLETARE */
 					if (!buffer_allocato(reg)) {
 						prepara_buffer();
 					}
@@ -254,8 +254,6 @@ void* main_sta_thread (void* nsp) {
 	reg.in_ricezione = FALSE;
 	reg.RTS = FALSE;
 	reg.ns = ns;
-	
-	/* Inizializzamo il buffer locale */
 	
 	/* Impostiamo il timeout per la select di 100 msec. */
 	t.tv_sec = 0; t.tv_usec = 100000;
