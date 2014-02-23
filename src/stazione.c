@@ -253,7 +253,7 @@ void* main_sta_thread (void* nsp) {
 	reg.in_trasmissione = FALSE;
 	reg.in_ricezione = FALSE;
 	reg.RTS = FALSE;
-	reg.ns = ns;
+	reg.ns = (ns+1);
 	
 	/* Impostiamo il timeout per la select di 100 msec. */
 	t.tv_sec = 0; t.tv_usec = 100000;
