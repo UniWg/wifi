@@ -143,7 +143,7 @@ int is_CTS(sta_registry_t* reg) {
 	f = get_frame_buffer(pack);	/* Spacchetto il pacchetto nel frame */
 
 	if((*f).cts == 1) {
-		printf (_Csta "STA %d: Pacchetto CTS ricevuto \n" _CColor_Off, ns);
+		printf (_Csta "STA %d: Pacchetto CTS ricevuto \n" _CColor_Off, ns+1);
 		return TRUE;
 	}
 	else return FALSE;
@@ -163,7 +163,7 @@ int is_RTS(sta_registry_t* reg) {
 	f = get_frame_buffer(pack);	/* Spacchetto il pacchetto nel frame */
 
 	if((*f).rts == 1) {
-		printf (_Csta "STA %d: Pacchetto RTS ricevuto \n" _CColor_Off, ns);
+		printf (_Csta "STA %d: Pacchetto RTS ricevuto \n" _CColor_Off, ns+1);
 		return TRUE;
 	}
 	else return FALSE;
@@ -201,7 +201,7 @@ char pacchetto_nostro(sta_registry_t* reg) {
 	f = get_frame_buffer((*reg).BLR);								/* Spacchetto il pacchetto nel frame */
 	x = strncmp((*f).addr1, stazione_g [ns].mac, 6);		/* metto a confronto i due indirizzi mac  */
 	if (x == 0) {
-		printf (_Csta "Stazione %d -- Arrivato pacchetto \n" _CColor_Off,ns);
+		printf (_Csta "Stazione %d -- Arrivato pacchetto \n" _CColor_Off,ns+1);
 		return (TRUE);
 	}
 	else return (FALSE);
@@ -300,11 +300,11 @@ void spedisci_RTS(sta_registry_t* reg, stato_sta_t *s) {
 
 	if(n<0) {
 		char msgerror[1024];
-		sprintf(msgerror, _Cerror"Stazione %d : write() failed [err %d] "_CColor_Off, ns, errno);
+		sprintf(msgerror, _Cerror"Stazione %d : write() failed [err %d] "_CColor_Off, ns+1, errno);
 		perror(msgerror);
 		fflush(stdout);
 	}
-	printf (_Csta "STA %d : Pacchetto RTS inviato \n" _CColor_Off, ns);
+	printf (_Csta "STA %d : Pacchetto RTS inviato \n" _CColor_Off, ns+1);
 	(*reg).in_trasmissione = TRUE;
 	(*reg).in_ricezione = FALSE;
 	(*reg).RTS = TRUE;
@@ -357,11 +357,11 @@ void spedisci_CTS(sta_registry_t* reg, stato_sta_t *s) {
 
 	if(n<0) {
 		char msgerror[1024];
-		sprintf(msgerror, _Cerror"Stazione %d : write() failed [err %d] "_CColor_Off, ns, errno);
+		sprintf(msgerror, _Cerror"Stazione %d : write() failed [err %d] "_CColor_Off, ns+1, errno);
 		perror(msgerror);
 		fflush(stdout);
 	}
-	printf (_Csta "STA %d : Pacchetto CTS inviato \n" _CColor_Off, ns);
+	printf (_Csta "STA %d : Pacchetto CTS inviato \n" _CColor_Off, ns+1);
 	(*reg).in_trasmissione = TRUE;
 	(*reg).in_ricezione = FALSE;
 	(*reg).RTS = FALSE;
