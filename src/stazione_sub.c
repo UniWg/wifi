@@ -7,8 +7,8 @@ int appendi_pacchetto (char* dst, char* src, int nnow, int nadd) {
 	pframe_t *f;
 	
 	f = get_frame_buffer(src);
-	y = mac2nsta((*f).addr1);
-	x = mac2nsta((*f).addr2);
+	y = mac2nsta((*f).addr2);
+	x = mac2nsta((*f).addr1);
 	printf ("da STA %d a STA %d: Appendi pacchetto %d %d\n",y,x,nnow,nadd);
 	for (i=0;i<nadd;i++)	{
 		dst [nnow+i] = src [i];
@@ -105,13 +105,15 @@ int sta_prendi_pacchetto (stato_sta_t *s, sta_registry_t* reg) {
 	ns = (*reg).ns;
 	fb = (char *) malloc (_max_frame_buffer_size * sizeof(char));
 		
+	/*printf("qui %d \t", ns);*/
+	if (FD_ISSET (stafd_g [ns], &(*s).Rset)) {
 		/* Leggiamo il pacchetto arrivato */	
 		do {
 			n = recv (stafd_g [ns], fb, _max_frame_buffer_size, 0);
-		} while (n<0);
+		} while ((n<0) && (errno==EINTR));
 		
 		(*reg).x = appendi_pacchetto((*reg).BLR, fb, (*reg).x, n);
-
+	}
 	return ((*reg).x);
 }
 	
@@ -216,10 +218,9 @@ char buffer_trasmissione_vuoto(sta_registry_t* reg) { 	/* bisogna controllare se
 
 	buf_loc = (*reg).BLT;	
 
-	return TRUE;
 
 	n = strlen(buf_loc);		/* Verifico la lunghezza del buffer */
-	printf("%d \n", n);
+	/*printf("%d \n", n);*/
 	if (n == 0) {
 		return TRUE;
 	}
@@ -258,7 +259,7 @@ char mezzo_disponibile(sta_registry_t* reg) {
 void spedisci_RTS(sta_registry_t* reg, stato_sta_t *s) {
 	int len, nwrite, n, ns;
 	pframe_t *f = (pframe_t*) malloc (sizeof (pframe_t));	
-	pframe_t *g;			
+	pframe_t *g = (pframe_t*) malloc (sizeof (pframe_t));			
 	char* fb;				 /* Frame buffer (con campo dati a zero) */
 	list2 *p;	
 
@@ -412,9 +413,13 @@ void spedisci_pacchetto(sta_registry_t* reg, stato_sta_t *s) {
 /* ------------------------------------------------------------------------- */
 
 void aggiorna_MC(sta_registry_t* reg) {
-	long i;
+	long i, x;
+	pframe_t *f;
 
-	i = getNOWmsec();
+	f = get_frame_buffer((*reg).BLT);
+	x = (*f).duration;
+	i = getNOWmsec() + x;
+	
 
 	imposta_tempo_occupazione_MC(_t_busy_normal, i, reg);
 	

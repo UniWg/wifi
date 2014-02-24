@@ -149,7 +149,7 @@ void collega_stazione (int ns) {
 ---------------------------------------------------------------------------- */
 void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
      int save_errno, errno;
-	 int len;
+	 int len=0;
 
 	while(1) {	
    	do {
@@ -171,17 +171,24 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 	}	
           /* È arrivato un pacchetto */ 
           if ((*s).nready > 0) {
+			do {
+				  /* Prendiamo il pacchetto e lo "appendiamo" */
                   len = sta_prendi_pacchetto(s, reg);
+				  /* Se il pacchetto è completo... */
+			} while(frame_completo(len, reg)!=TRUE);
                   if (frame_completo(len, reg)) {
-						
-						if (CRC_zero(reg)) {		/* Il pacchetto è corrotto */ 
+						/* ... bisogna vedere se è il pacchetto è corrotto... */
+						if (CRC_zero(reg)) {		
 							reset_indice();
 							if (ricezione(reg)) {
 								reset_buffer();
 							}
+
 							imposta_tempo_occupazione_MC(_t_busy_error, 0, reg);
+
 						}
-						else if (pacchetto_nostro(reg)) {		/* Il pacchetto che è arrivato è nostro */
+						/* ... e bisogna controllare se il pacchetto che è arrivato è nostro */
+						else if (pacchetto_nostro(reg)) {		
 							if (is_CTS(reg)) {
 								if (spedito_RTS(reg)) {
 									spedisci_pacchetto(reg, s);
@@ -200,13 +207,15 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 						else if (is_RTS(reg)) {
 							aggiorna_MC(reg);
 						}
-						/* scarta il pacchetto */
+						/* Se siamo qui vuol dire che bisogna scartare il pacchetto */
 				}
-				else {		/* Il pacchetto non è completo, bisogna accodare i dati nel buffer */
-					
+				/* Il pacchetto non è completo, bisogna accodare i dati nel buffer */
+				else {		
+					printf("sono qui");
 				}
 		}
-	else {		/* Scaduto timeout della select */
+	/* Scaduto timeout della select */
+	else {		
 			if (trasmissione(reg)) {
 				if (scaduto_timeout_ACK()) {
            			continua_trasmissione ();
@@ -253,7 +262,7 @@ void* main_sta_thread (void* nsp) {
 	reg.in_trasmissione = FALSE;
 	reg.in_ricezione = FALSE;
 	reg.RTS = FALSE;
-	reg.ns = (ns+1);
+	reg.ns = ns;
 	
 	/* Impostiamo il timeout per la select di 100 msec. */
 	t.tv_sec = 0; t.tv_usec = 100000;

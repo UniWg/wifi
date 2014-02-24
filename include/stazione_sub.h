@@ -57,8 +57,8 @@ int sta_prendi_pacchetto (stato_sta_t *s, sta_registry_t* reg);
 * Nome			: luca
 * Descrizione	: Riceve il pacchetto dati
 * Par. Ritorno	: Restituisce la lunghezza del pacchetto ricevuto
-* Par. Formali	: 
-			- s			: stato della stazione
+* Par. Formali	:
+			- s 		: stato della stazione
 			- reg		: registro della stazione
 ---------------------------------------------------------------------------- */
 
