@@ -220,13 +220,15 @@ char pacchetto_nostro(sta_registry_t* reg) {
 
 char buffer_trasmissione_vuoto(sta_registry_t* reg) { 	/* bisogna controllare se la Fifo è vuota*/
 	int x;
-	list2 *p;
 
 	x = (*reg).ns;
-	p = LTL[x+1];
 
-	if (fifo_is_empty(p)) {
-		return TRUE;
+	if (((*reg).BLT [0] == 0) && ((*reg).BLT [1] == 2) && ((*reg).BLT [2] == 1)) {	/* Sequenza che indica buffer vuoto */
+
+		if (fifo_is_empty(LTL [x])) {
+ 			return TRUE;
+		}
+		else return FALSE;
 	}
 	else return FALSE;
 }
@@ -234,11 +236,11 @@ char buffer_trasmissione_vuoto(sta_registry_t* reg) { 	/* bisogna controllare se
 /* ------------------------------------------------------------------------- */
 
 char buffer_allocato(sta_registry_t* reg) {
-	list2 *p;
+	int x;
 	
-	p = (*reg).LTT;
+	x = (*reg).ns;
 
-	if (fifo_is_empty(p)) {			/* Se la lista temporanea di trasmissione è vuota */
+	if (fifo_is_empty((*reg).LTT [x+1])) {			/* Se la lista temporanea di trasmissione è vuota */
 		return FALSE;
 	}
 	else return TRUE;
@@ -249,17 +251,13 @@ char buffer_allocato(sta_registry_t* reg) {
 
 void prepara_buffer(sta_registry_t* reg){
 	int x;
-	char *fb;
-	list2 *ltl;
-	list2 *ltt;
+	char *fb = (char *) malloc (_max_frame_buffer_size * sizeof(char));
 
 	x = (*reg).ns;
-	ltl = LTL[x+1];
-	ltt = (*reg).LTT;
 
-	if (fifo_read(ltl, fb)) {	/*  Dato che c'è qualcosa da leggere lo trasferisco nella lista temporanea di trasmissione*/
+	if (fifo_read(LTL [x+1], fb)) {	/*  Dato che c'è qualcosa da leggere lo trasferisco nella lista temporanea di trasmissione*/
 
-		fifo_push(ltt, fb);	
+		fifo_push((*reg).LTT [x+1], fb);	
 		
 	}
 	
@@ -291,7 +289,7 @@ void spedisci_RTS(sta_registry_t* reg, stato_sta_t *s) {
 	ns = (*reg).ns;
 	FD_SET (stafd_g[ns], &(*s).Wset);
 	
-	p = (*reg).LTT;
+	p = (*reg).LTT [ns+1];
 	g = get_frame_buffer((*p).pack);
 
 	/* Impostiamo i campi del frame da spedire */
@@ -348,7 +346,7 @@ void spedisci_CTS(sta_registry_t* reg, stato_sta_t *s) {
 	ns = (*reg).ns;
 	FD_SET (stafd_g[ns], &(*s).Wset);
 	
-	p = (*reg).LTT;
+	p = (*reg).LTT [ns+1];
 	g = get_frame_buffer((*p).pack);
 
 	/* Impostiamo i campi del frame da spedire */
@@ -415,7 +413,7 @@ void spedisci_pacchetto(sta_registry_t* reg, stato_sta_t *s) {
 	list2 *p;						
 
 	ns = (*reg).ns;	
-	p = (*reg).LTT;
+	p = (*reg).LTT [ns+1];
 	buf = (*reg).BLT;
 
 	if (fifo_read(p, buf)) {		/* Se c'è un elemento nella lista lo metto nel buffer di trasmissione e spedisco */

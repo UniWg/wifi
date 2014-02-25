@@ -227,7 +227,7 @@ int scaduto_timeout_ACK(void);
 
 
 
-void prepara_buffer(void);
+void prepara_buffer(sta_registry_t* reg);
 
 
 

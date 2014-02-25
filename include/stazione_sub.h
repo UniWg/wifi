@@ -13,8 +13,8 @@ typedef struct {
 	char BLT [_max_frame_buffer_size];			/* Buffer temporaneo di trasmissione */
 	char BLR [_max_frame_buffer_size];			/* Buffer temporaneo di ricezione  */
 	int x;										/* numeri di caratteri ricevuti nel BLR */
-	list2 *LTT;									/* Lista temporanea di trasmissione */
-	list2 *LTR;									/* Lista temporanea di ricezione */
+	list2 *LTT [_nsta];							/* Lista temporanea di trasmissione */
+	list2 *LTR [_nsta];							/* Lista temporanea di ricezione */
 	long t_mc_busy;								/* epoch occupazione mezzo */
 	char in_trasmissione;						/* TRUE : stiamo trasmettendo */
 	char in_ricezione;							/* TRUE : stiamo ricevendo */

@@ -158,7 +158,7 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 		(*s).nready = select (1000,&(*s).Rset,&(*s).Wset,NULL,&t); /* bisogna mettere un valore appropriato al descrittore massimo */
 		/* SOLO PER DEBUG */
 		save_errno = errno;
-		/*printf ("nready=%d\t", (*s).nready);*/
+		printf ("nready=%d\t", (*s).nready);
 		errno = save_errno;
 		/* FINE SOLO PER DEBUG */
 
@@ -169,11 +169,12 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 		fflush (stderr);
 		exit (-1);
 	}	
+	
           /* È arrivato un pacchetto */ 
           if ((*s).nready > 0) {
 
 				  /* Prendiamo il pacchetto e lo "appendiamo" */
-                  len = sta_prendi_pacchetto(s, reg) + len;
+                  len = sta_prendi_pacchetto(s, reg);
 
 				  /* Se il pacchetto è completo... */
                   if (frame_completo(len, reg)) {
@@ -212,18 +213,21 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 				}
 				/* Il pacchetto non è completo, bisogna accodare i dati nel buffer */
 				else {		
-					printf("sono qui");
+					
 				}
 		}
 	/* Scaduto timeout della select */
 	else {		
 			if (trasmissione(reg)) {
+				
 				if (scaduto_timeout_ACK()) {
            			continua_trasmissione ();
 				}
 			}
 			else if (!ricezione(reg)) {
+printf("qui<");
 				 if (!buffer_trasmissione_vuoto(reg)) {		/* <-- DA COMPLETARE */
+
 					if (!buffer_allocato(reg)) {
 						prepara_buffer(reg);
 					}
@@ -257,8 +261,8 @@ void* main_sta_thread (void* nsp) {
 	reg.BLT [0] = 0; reg.BLT [1] = 2; reg.BLT [2] = 1;	/* Sequenza che indica pacchetto vuoto */
 	reg.BLR [0] = 0; reg.BLR [1] = 2; reg.BLR [2] = 1;	/* Sequenza che indica pacchetto vuoto */
 	reg.x = 0;
-	reg.LTT = fifo_create();							
-	reg.LTR = fifo_create();
+	reg.LTT [ns] = fifo_create();							
+	reg.LTR [ns] = fifo_create();
 	reg.t_mc_busy = 0;
 	reg.in_trasmissione = FALSE;
 	reg.in_ricezione = FALSE;
