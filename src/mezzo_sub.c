@@ -48,7 +48,6 @@ int out_of_time (stato_t *s) {
 void prendi_pacchetto (stato_t *s,char* pack) {
 	int j,n;
 
-	printf (_Cmezzo "Ho ricevuto un pacchetto\n" _CColor_Off);
 	/* Controlliamo quali descrittori sono settati */
 	for (j=0;j<_nsta;j++) {
 		if (FD_ISSET ((*s).clientfd [j],&(*s).Rset)) {
@@ -109,11 +108,6 @@ void occupa_area (pframe_t* f,area_t* aree,char* pack) {
 				printf ("<occupa_area> errore critico. \"Durata\" area %d non è a zero",i+1);  
 				exit (1);
 			}
-			
-			
-			/* LA DURATA DEVE ESSERE PRESA DAL PACCHETTO */
-			
-			
 			aree [i].durata = getNOWmsec ();	/* epoch msec */
 			if ((*f).rts == 1 || (*f).cts || (*f).packetl < 100)	aree [i].durata += _packet_duration_low;
 			else 	aree [i].durata += _packet_duration_hi;
@@ -180,6 +174,7 @@ void get_dest (int index,area_t* aree,char* dest) {
 
 	f = get_frame_buffer (aree [index].pack);	
 	strncpy (dest,(*f).addr1,6);
+	free (f);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -188,12 +183,16 @@ void controlla_conflitto_di_destinazioni (area_t* aree) {
 	char d1 [6],d2 [6];
 	
 	/* Per semplicitá non cicliamo sulle aree, ma consideriamo solo le due aree attive */
+	/* Diamo errore se entrambe le aree vogliono trasmettere alla stazione 4 (quella in comune) */
+	
+	/* DA MIGLIORARE */
 	
 	/* Ha senso fare la verifica solo se entrambe le aree hanno un pacchetto */
 	if ((aree[0].durata > 0) && (aree[1].durata > 0)) {	
 		get_dest (0,aree,d1);	
 		get_dest (1,aree,d2);
-		if (strncmp (d1,d2,6) == 0) {
+		/* if (strncmp (d1,d2,6) == 0) { */
+		if ((mac2nsta (d1) == 4) && (mac2nsta (d2) == 4)) {
 			/* I destinatari delle due aree sono uguali. Marchiamo errore su entrambe le aree */
 			for (i=0;i<=1;i++) {
 				aree [i].errore_in_corso = TRUE;
@@ -250,7 +249,7 @@ void spedisci_prima_parte_pacchetto (stato_t *s,area_t* aree) {
 			f = get_frame_buffer (aree [i].pack);		/* Prendiamo il pacchetto da spedire */
 			mitt = mac2nsta ((*f).addr2);				/* numero stazione mittente */
 			len = (*f).packetl-1;						/* Non spediamo l'ultimo byte */	
-			
+
 			for (k=0;k<_nsta;k++) {
 				/* and logico tra il numero della stazione e la configurazione del campo di visibilità del mittente */
 				/* in pratica serve per dedurre le stazioni raggiungibili */
@@ -263,6 +262,8 @@ void spedisci_prima_parte_pacchetto (stato_t *s,area_t* aree) {
 			}
 
 			aree [i].spedita_prima_parte = TRUE;	/* I primi n-1 byte sono stati spediti */
+			
+			free (f);
 		}
 	}
 }
@@ -302,6 +303,8 @@ void spedisci_ultimo_byte (stato_t *s,area_t* aree) {
 			
 			/* Incrementiamo il numero di pacchetti spediti (serve per il calcolo degli errori) */
 			aree [i].contatore_di_pacchetti++;
+			
+			free (f);
 		}
 	}
 }
@@ -321,6 +324,8 @@ void set_CRC0 (int index,area_t* aree) {
 	
 	/* ... e mettiamo a zero l'ultimo byte, quello corrispondente al CRC */
 	aree [index].pack [(*f).packetl-1] = 0;
+	
+	free (f);
 }
 
 /* ------------------------------------------------------------------------- */
