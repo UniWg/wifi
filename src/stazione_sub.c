@@ -101,17 +101,23 @@ void continua_trasmissione (void) {
 int sta_prendi_pacchetto (stato_sta_t *s, sta_registry_t* reg) {
 	int n, ns;
 	char* fb;				/* struttura d'appoggio */
-	
+	pframe_t *f;
+	int x;
+
 	ns = (*reg).ns;
 	fb = (char *) malloc (_max_frame_buffer_size * sizeof(char));
 		
-	/*printf("qui %d \t", ns);*/
+	
 	if (FD_ISSET (stafd_g [ns], &(*s).Rset)) {
+printf("STA %d: IN LETTURA  \t", ns+1);
 		/* Leggiamo il pacchetto arrivato */	
 		do {
 			n = recv (stafd_g [ns], fb, _max_frame_buffer_size, 0);
 		} while ((n<0) && (errno==EINTR));
 		
+		f = get_frame_buffer(fb);
+		x = mac2nsta((*f).addr1);
+printf("%d \t", x);
 		(*reg).x = appendi_pacchetto((*reg).BLR, fb, (*reg).x, n);
 	}
 	return ((*reg).x);
@@ -213,15 +219,13 @@ char pacchetto_nostro(sta_registry_t* reg) {
 /* ------------------------------------------------------------------------- */
 
 char buffer_trasmissione_vuoto(sta_registry_t* reg) { 	/* bisogna controllare se la Fifo è vuota*/
-	int n;
-	char* buf_loc;
+	int x;
+	list2 *p;
 
-	buf_loc = (*reg).BLT;	
+	x = (*reg).ns;
+	p = LTL[x+1];
 
-
-	n = strlen(buf_loc);		/* Verifico la lunghezza del buffer */
-	/*printf("%d \n", n);*/
-	if (n == 0) {
+	if (fifo_is_empty(p)) {
 		return TRUE;
 	}
 	else return FALSE;
@@ -238,6 +242,27 @@ char buffer_allocato(sta_registry_t* reg) {
 		return FALSE;
 	}
 	else return TRUE;
+
+}
+
+/* ------------------------------------------------------------------------- */
+
+void prepara_buffer(sta_registry_t* reg){
+	int x;
+	char *fb = (char *) malloc (_max_frame_buffer_size * sizeof(char));
+	list2 *ltl;
+	list2 *ltt;
+
+	x = (*reg).ns;
+	ltl = LTL[x+1];
+	ltt = (*reg).LTT;
+
+	if (fifo_read(ltl, fb)) {	/*  Dato che c'è qualcosa da leggere lo trasferisco nella lista temporanea di trasmissione*/
+
+		fifo_push(ltt, fb);	
+		
+	}
+	
 
 }
 
@@ -426,6 +451,7 @@ void aggiorna_MC(sta_registry_t* reg) {
 }
 
 /* ------------------------------------------------------------------------- */
+
 void reset_indice(void) {}
 void reset_buffer(void) {}
 
@@ -441,7 +467,7 @@ void aggiungi_pacchetto(sta_registry_t* reg) {}
 
 int scaduto_timeout_ACK(void) {return 0;}
 
-void prepara_buffer(void){}
+
 
 
 /* ######################################################################### */
