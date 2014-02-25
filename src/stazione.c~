@@ -171,11 +171,11 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 	}	
           /* È arrivato un pacchetto */ 
           if ((*s).nready > 0) {
-			do {
+
 				  /* Prendiamo il pacchetto e lo "appendiamo" */
-                  len = sta_prendi_pacchetto(s, reg);
+                  len = sta_prendi_pacchetto(s, reg) + len;
+
 				  /* Se il pacchetto è completo... */
-			} while(frame_completo(len, reg)!=TRUE);
                   if (frame_completo(len, reg)) {
 						/* ... bisogna vedere se è il pacchetto è corrotto... */
 						if (CRC_zero(reg)) {		
@@ -188,7 +188,8 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 
 						}
 						/* ... e bisogna controllare se il pacchetto che è arrivato è nostro */
-						else if (pacchetto_nostro(reg)) {		
+						else if (pacchetto_nostro(reg)) {	
+							printf("fuck");			
 							if (is_CTS(reg)) {
 								if (spedito_RTS(reg)) {
 									spedisci_pacchetto(reg, s);
@@ -222,7 +223,7 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 				}
 			}
 			else if (!ricezione(reg)) {
-				 if (buffer_trasmissione_vuoto(reg)) {		/* <-- DA COMPLETARE */
+				 if (!buffer_trasmissione_vuoto(reg)) {		/* <-- DA COMPLETARE */
 					if (!buffer_allocato(reg)) {
 						prepara_buffer();
 					}
