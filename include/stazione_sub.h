@@ -13,8 +13,8 @@ typedef struct {
 	char BLT [_max_frame_buffer_size];			/* Buffer temporaneo di trasmissione */
 	char BLR [_max_frame_buffer_size];			/* Buffer temporaneo di ricezione  */
 	int x;										/* numeri di caratteri ricevuti nel BLR */
-	list2 *LTT [_nsta];							/* Lista temporanea di trasmissione */
-	list2 *LTR [_nsta];							/* Lista temporanea di ricezione */
+	list2 *LTT;									/* Lista temporanea di trasmissione */
+	list2 *LTR;									/* Lista temporanea di ricezione */
 	long t_mc_busy;								/* epoch occupazione mezzo */
 	char in_trasmissione;						/* TRUE : stiamo trasmettendo */
 	char in_ricezione;							/* TRUE : stiamo ricevendo */
@@ -29,7 +29,7 @@ typedef struct {
 /* ######################################################################### */
 /* ######################################################################### */
 
-int appendi_pacchetto (char* dst, char* src, int nnow, int nadd);
+int appendi_pacchetto (char* dst, char* src, int nnow, int nadd, int ns);
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
 * Descrizione	: Aggiunge src in coda a dst
@@ -39,6 +39,7 @@ int appendi_pacchetto (char* dst, char* src, int nnow, int nadd);
 			- src  : buffer sorgente
 			- nnow : numero di caratteri presenti nel buffer di destinazione
 			- nadd : numero di caratteri presenti nel buffer sorgente
+			- ns   : numero della stazione
 ---------------------------------------------------------------------------- */
 
 char frame_completo (int n, sta_registry_t* reg);
@@ -164,6 +165,16 @@ void spedisci_RTS(sta_registry_t* reg, stato_sta_t *s);
 			- s		: stato della stazione
 ---------------------------------------------------------------------------- */
 
+void spedisci_CTS(sta_registry_t* reg, stato_sta_t *s);
+/* ----------------------------------------------------------------------------
+* Nome			: luca
+* Descrizione	: Spedisce un CTS
+* Par. Ritorno	: NULL
+* Par. Formali	: 
+			- reg	: registro della stazione
+			- s		: stato della stazione
+---------------------------------------------------------------------------- */
+
 char spedito_RTS(sta_registry_t* reg);
 /* ----------------------------------------------------------------------------
 * Nome			: luca
@@ -172,6 +183,8 @@ char spedito_RTS(sta_registry_t* reg);
 * Par. Formali	: 
 			- reg	: registro della stazione
 ---------------------------------------------------------------------------- */
+
+
 
 void spedisci_pacchetto(sta_registry_t* reg, stato_sta_t *s);
 /* ----------------------------------------------------------------------------
@@ -183,23 +196,18 @@ void spedisci_pacchetto(sta_registry_t* reg, stato_sta_t *s);
 			- s		: stato della stazione
 ---------------------------------------------------------------------------- */
 
-void resetta_buffer_ricezione (sta_registry_t* reg);
+void reset_parametri (void);
 
 /* ------------------------------------------------------------------------- */
 
 
 
 
-
+void reset_buffer(sta_registry_t* reg);
 
 /*###########################################################################*/
 /*####################DA COMPLETARE##########################################*/
 /*###########################################################################*/
-
-void reset_indice(void);
-
-void reset_buffer(void);
-
 
 int is_ACK(sta_registry_t* reg);
 
@@ -208,7 +216,7 @@ int is_ACK(sta_registry_t* reg);
 
 
 
-void spedisci_CTS(sta_registry_t* reg, stato_sta_t *s);
+
 
 
 
