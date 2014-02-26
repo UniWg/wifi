@@ -288,32 +288,48 @@ void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
 		prendi_pacchetto (s,pack);
 		/* ... e lo spacchettimo */
 		f = get_frame_buffer (pack);
-		if (area_libera (f,aree) == TRUE) {
-			/* occupiamo una o più aree per il tempo indicato in duration e mettiamo il pacchetto nell'area */
-			occupa_area (f,aree,pack);				
+		marca_arrivo (f,aree);
+		if (area_in_errore (f,aree) == FALSE) {
+			if (area_libera (f,aree) == TRUE) {
+				/* occupiamo una o più aree per il tempo indicato in duration e mettiamo il pacchetto nell'area */
+				occupa_area (f,aree,pack);				
+			}
+			else {
+				/* l'area non è libera. Il pacchetto arrivato ha generato una collisione */
+				/* Il pacchetto non lo consideriamo (viene quindi scartato) e marchiamo errore sull'area*/
+				marca_errore_per_collisione (f,aree);
+			}
 		}
 		else {
-			/* l'area non è libera. Il pacchetto arrivato ha generato una collisione */
-			/* Il pacchetto non lo consideriamo (viene quindi scartato) e marchiamo errore sull'area*/
-			marca_errore_per_collisione (f,aree);
+			/* Il pacchetto viene scartato. L'area verrà tolta dallo stato di errore nel momento in cui
+				il pacchetto con CRC = 0 è stato mandato a tutti i mittenti */
 		}
 	} 
 	/* #### SCADUTO TIMEOUT DELLA SELECT (100ms) ################################## */
 	else {
-		/* Vediamo se c'è almeno un pacchetto nelle aree */
-		if (pacchetto_in_area (aree) == TRUE) {			
-			
-			genera_errore_casuale (aree);
-			
-			controlla_conflitto_di_destinazioni (aree); /* verifica se ci sono piú pacchetti per lo stesso dest */
-			
-			spedisci_prima_parte_pacchetto (s,aree);
-			
+		if (qualche_area_in_errore (aree) == TRUE) {
+			/* Abbiamo delle aree in errore */
+			spedisci_prima_parte_crc0_mittente (s,aree);
 			if (scaduto_timer (aree) == TRUE) {
-				/* Spedisci il pacchetto e toglilo dal buffer */
-				spedisci_ultimo_byte (s,aree);
+				spedisci_ultimo_byte_crc0_mittente (s,aree);
 			}
-		} 
+		}
+		else {
+			/* Vediamo se c'è almeno un pacchetto nelle aree */
+			if (pacchetto_in_area (aree) == TRUE) {			
+			
+				genera_errore_casuale (aree);
+				
+				controlla_conflitto_di_destinazioni (aree); /* verifica se ci sono piú pacchetti per lo stesso dest */
+			
+				spedisci_prima_parte_pacchetto (s,aree);
+			
+				if (scaduto_timer (aree) == TRUE) {
+					/* Spedisci il pacchetto e toglilo dal buffer */
+					spedisci_ultimo_byte (s,aree);
+				}
+			}	
+		}
 	}
 }
 
@@ -394,6 +410,8 @@ void* main_mc_thread (void* param) {
 	for (i=0;i<_n_area;i++) {
 		reset_area (i,aree);
 		aree [i].errore_in_corso = FALSE;
+		aree [i].spedita_prima_parte_errore = FALSE;
+		aree [i].arrivo = 0;
 	}
 	
 	/* Ciclo principale: vita del mezzo condiviso */

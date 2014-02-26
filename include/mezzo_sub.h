@@ -51,6 +51,15 @@ char area_libera (pframe_t* f,area_t* aree);
 
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
+* Descrizione	: Imposta il tempo di arrivo nell'area
+* Par. Formali  :
+				f : pacchetto formattato
+				aree : stato delle aree gestite dal mezzo
+---------------------------------------------------------------------------- */
+void marca_arrivo (pframe_t* f,area_t* aree);
+
+/* ------------------------------------------------------------------------- 
+* Nome			: carlo
 * Descrizione	: Occupa l'area del pacchetto f per un tempo pari a Duration
 * Par. Formali  :
 				f : pacchetto formattato
@@ -139,6 +148,43 @@ void reset_area (int index,area_t* aree);
 				aree : stato delle aree gestite dal mezzo
 ---------------------------------------------------------------------------- */
 void set_CRC0 (int index,area_t* aree);
+
+/* ------------------------------------------------------------------------- 
+* Nome			: carlo
+* Descrizione	: Controlla se c'è qualche area con un errore in corso
+* Par. Ritorno  : TRUE se trova almeno un'area con un errore in corso
+* Par. Formali  :
+				aree : stato delle aree gestite dal mezzo
+---------------------------------------------------------------------------- */
+char qualche_area_in_errore (area_t* aree);
+
+/* ------------------------------------------------------------------------- 
+* Nome			: carlo
+* Descrizione	: Controlla se il pacchetto che è arrivato si riferisce ad un area in stato di errore
+* Par. Ritorno  : TRUE se il pacchetto si riferisce ad un'area in stato di errore
+* Par. Formali  :
+				f : pacchetto formattato
+				aree : stato delle aree gestite dal mezzo
+---------------------------------------------------------------------------- */
+char area_in_errore (pframe_t* f,area_t* aree);
+
+/* ------------------------------------------------------------------------- 
+* Nome			: carlo
+* Descrizione	: Spedisce n-1 byte del pacchetto al mittente. Si utilizza dopo avere rilevato CRC = 0
+* Par. Formali  :
+				s : registro di stato della select
+				aree : stato delle aree gestite dal mezzo
+---------------------------------------------------------------------------- */
+void spedisci_prima_parte_crc0_mittente (stato_t *s,area_t* aree);
+
+/* ------------------------------------------------------------------------- 
+* Nome			: carlo
+* Descrizione	: Spedisce ultimo byte del pacchetto al mittente. Si utilizza dopo avere rilevato CRC = 0
+* Par. Formali  :
+				s : registro di stato della select
+				aree : stato delle aree gestite dal mezzo
+---------------------------------------------------------------------------- */
+void spedisci_ultimo_byte_crc0_mittente (stato_t *s,area_t* aree);
 
 #endif
 

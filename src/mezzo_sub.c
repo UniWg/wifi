@@ -128,8 +128,21 @@ void marca_errore_per_collisione (pframe_t* f,area_t* aree) {
 		if (_area_stax [s-1] & power2) {
 			/* Siamo in una delle aree di appartenenza del pacchetto (potrebbe essere solo questa) */	
 			/* Marchiamo errore sull´area */
-			aree [i].errore_in_corso = TRUE;
 			set_CRC0 (i,aree);
+		}
+		power2 *= 2;
+	}
+}
+
+/* ------------------------------------------------------------------------- */
+void marca_arrivo (pframe_t* f,area_t* aree) {
+	int i,power2=1,s = mac2nsta ((*f).addr2);
+
+	for (i=0;i<_n_area;i++) {
+		if (_area_stax [s-1] & power2) {
+			/* Siamo in una delle aree di appartenenza del pacchetto (potrebbe essere solo questa) */	
+			/* Marchiamo tempo sull´area */
+			aree [i].arrivo = getNOWmsec ();
 		}
 		power2 *= 2;
 	}
@@ -160,7 +173,6 @@ void genera_errore_casuale (area_t* aree) {
 	
 				if (errore == TRUE) {
 					/* Abbiamo generato un errore. Dobbiamo indicarlo e mettere a zero il CRC del pacchetto */
-					aree [i].errore_in_corso = TRUE;
 					set_CRC0 (i,aree);
 				}
 			}
@@ -195,9 +207,28 @@ void controlla_conflitto_di_destinazioni (area_t* aree) {
 		if ((mac2nsta (d1) == 4) && (mac2nsta (d2) == 4)) {
 			/* I destinatari delle due aree sono uguali. Marchiamo errore su entrambe le aree */
 			for (i=0;i<=1;i++) {
-				aree [i].errore_in_corso = TRUE;
 				set_CRC0 (i,aree);
 			}
+			
+			/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+			/* Togliamo il pacchetto dell'area 1. 
+				nella versione definitiva dovrà essere tolto il pacchetto della stazione che arriva per seconda */
+				
+			/* A questo punto il pacchetto che viene scartato non viene mandato a nessuna stazione dell'area
+				quindi la stazione che aveva mandato (per esempio) un RTS non si vedrà arrivare risposta e
+				rileverà l'errore causa timeout */	
+				
+			if (aree [0].arrivo < aree [1].arrivo)	i=0;
+			else	i=1;	
+			
+			aree [i].durata = 0;
+			aree [i].spedita_prima_parte = FALSE;
+			aree [i].errore_in_corso = FALSE;
+			aree [i].spedita_prima_parte_errore = FALSE;
+
+		
+					
+			/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
 		}
 	}
 }
@@ -304,6 +335,12 @@ void spedisci_ultimo_byte (stato_t *s,area_t* aree) {
 			/* Incrementiamo il numero di pacchetti spediti (serve per il calcolo degli errori) */
 			aree [i].contatore_di_pacchetti++;
 			
+			if ((*f).crc == 0) {
+				aree [i].errore_in_corso = TRUE;
+				aree [i].spedita_prima_parte_errore = FALSE;
+				aree [i].durata = epoca + _packet_duration_low;
+			}
+			
 			free (f);
 		}
 	}
@@ -326,6 +363,103 @@ void set_CRC0 (int index,area_t* aree) {
 	aree [index].pack [(*f).packetl-1] = 0;
 	
 	free (f);
+}
+
+/* ------------------------------------------------------------------------- */
+char qualche_area_in_errore (area_t* aree) {
+	int i;
+	
+	for (i=0;i<_n_area;i++) {
+		if (aree [i].errore_in_corso == TRUE) {
+			return (TRUE);
+		}	
+	}
+	
+	return (FALSE);
+}
+
+/* ------------------------------------------------------------------------- */
+char area_in_errore (pframe_t* f,area_t* aree) {
+	/* L'area deve essere dedotta da f. 
+		In particolare la stazione 4 dovrà avere entrambe le aree prive di errori per poter trasmettere */
+	
+	int i,power2=1,s = mac2nsta ((*f).addr2);
+	char ris = FALSE;
+	
+	for (i=0;i<_n_area;i++) {
+		if (_area_stax [s-1] & power2) {
+			if (aree [i].errore_in_corso == TRUE) {	/* E' sufficiente avere un'area in errore */
+				ris = TRUE;
+				break;
+			}
+		}
+		power2 *= 2;		/* potenze di 2 da confrontare con la bitmap della stazione */
+	}
+	
+	return (ris);
+}
+
+/* ------------------------------------------------------------------------- */
+void spedisci_prima_parte_crc0_mittente (stato_t *s,area_t* aree) {
+	int i,mitt,len,nwrite,n;
+	pframe_t* f;
+	
+	for (i=0;i<_n_area;i++)	{
+		if ((aree [i].durata > 0) && (aree [i].spedita_prima_parte_errore == FALSE) && (aree [i].errore_in_corso == TRUE)) {
+			/* Spediamo gli n-1 byte di questo pacchetto a tutte le stazioni dell'area tranne che al mittente */
+			
+			f = get_frame_buffer (aree [i].pack);		/* Prendiamo il pacchetto da spedire */
+			mitt = mac2nsta ((*f).addr2);				/* numero stazione mittente (1..4) */
+			len = (*f).packetl-1;						/* Non spediamo l'ultimo byte */	
+
+
+			nwrite=0;
+			while ((n = write((*s).clientfd [mitt-1], aree [i].pack, len-nwrite)) >0)
+				nwrite+=n;
+			printf (_Cmezzo "%d Spedito primi n-1 byte a stazione mittente %d\n" _CColor_Off,mitt,mitt);
+			
+			
+			aree [i].spedita_prima_parte_errore = TRUE;	/* I primi n-1 byte sono stati spediti */
+			
+			free (f);
+		}
+	}
+}
+
+/* ------------------------------------------------------------------------- */
+void spedisci_ultimo_byte_crc0_mittente (stato_t *s,area_t* aree) {
+	long epoca;
+	int i,mitt,len,nwrite,n;
+	pframe_t* f;
+	char buf [1];
+	
+	epoca = getNOWmsec ();	/* epoch msec */
+	for (i=0;i<_n_area;i++)	{
+		if ((aree [i].durata > 0) && (aree [i].durata<=epoca) && (aree [i].spedita_prima_parte_errore == TRUE) && (aree [i].errore_in_corso == TRUE)) {
+			/* Spediamo l'ultimo  byte di questo pacchetto a tutte le stazioni dell'area tranne che al mittente */
+			
+			f = get_frame_buffer (aree [i].pack);		/* Prendiamo il pacchetto da spedire */
+			mitt = mac2nsta ((*f).addr2);				/* numero stazione mittente */
+			len = 1;										
+			buf [0] = aree [i].pack [(*f).packetl-1];	/* Spediamo solo l'ultimo byte */
+
+			
+			nwrite=0;
+			while ((n = write((*s).clientfd [mitt-1], buf, len-nwrite)) >0)
+				nwrite+=n;
+			printf (_Cmezzo "%d Spedito ultimo byte a stazione %d\n" _CColor_Off,mitt,mitt);
+
+			
+			/* Togliamo il pacchetto dal buffer */
+			/* Se ci sono errori allora non devono essere resettati, ma lasciati in evidenza */
+			reset_area (i,aree);
+			
+			aree [i].errore_in_corso = FALSE;
+			aree [i].spedita_prima_parte_errore = FALSE;
+			
+			free (f);
+		}
+	}
 }
 
 /* ------------------------------------------------------------------------- */
