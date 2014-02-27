@@ -217,15 +217,19 @@ void controlla_conflitto_di_destinazioni (area_t* aree) {
 			/* A questo punto il pacchetto che viene scartato non viene mandato a nessuna stazione dell'area
 				quindi la stazione che aveva mandato (per esempio) un RTS non si vedrà arrivare risposta e
 				rileverà l'errore causa timeout */	
-				
-			if (aree [0].arrivo < aree [1].arrivo)	i=0;
-			else	i=1;	
 			
-			aree [i].durata = 0;
-			aree [i].spedita_prima_parte = FALSE;
-			aree [i].errore_in_corso = FALSE;
-			aree [i].spedita_prima_parte_errore = FALSE;
-
+			/*
+			if ((aree [0].arrivo > 0) && (aree [1].arrivo > 0)) {
+				if (aree [0].arrivo < aree [1].arrivo)	i=0;
+				else	i=1;	
+			
+				aree [i].durata = 0;
+				aree [i].spedita_prima_parte = FALSE;
+				aree [i].errore_in_corso = FALSE;
+				aree [i].spedita_prima_parte_errore = FALSE;
+			}
+			*/
+			
 		
 					
 			/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
