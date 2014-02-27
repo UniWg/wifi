@@ -211,6 +211,7 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 								/* Allora si tratta di un pacchetto */
 								aggiungi_pacchetto(reg);
 							}
+						(*reg).x = 0;
 						}
 						else {
 							/* Se siamo qui vuol dire che bisogna scartare il pacchetto */
