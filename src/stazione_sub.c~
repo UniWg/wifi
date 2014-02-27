@@ -2,17 +2,17 @@
 
 /* ------------------------------------------------------------------------- */
 
-int appendi_pacchetto (char* dst, char* src, int nnow, int nadd) {
-	int i, x, y;
+int appendi_pacchetto (char* dst, char* src, int nnow, int nadd, int ns) {
+	int i, mitt;
 	pframe_t *f;
 	
 	f = get_frame_buffer(src);
-	y = mac2nsta((*f).addr2);
-	x = mac2nsta((*f).addr1);
-	printf ("da STA %d a STA %d: Appendi pacchetto %d %d\n",y,x,nnow,nadd);
-	for (i=0;i<nadd;i++)	{
+	mitt = mac2nsta((*f).addr2);
+	printf ("da STA %d a STA %d: Appendi pacchetto %d %d\n", mitt, (ns+1), nnow, nadd);
+	for (i=0;i<nadd;i++) {
 		dst [nnow+i] = src [i];
 	}
+	free (f);
 	return (nnow+nadd);
 }
 
@@ -22,34 +22,20 @@ char frame_completo (int n, sta_registry_t* reg) {
 	int x;
 	pframe_t *f;
 
-	if (n<15)				/* Dobbiamo avere sufficienti caratteri per leggere la len del pacchetto */
+	if (n<_pframe_other_len)				/* Dobbiamo avere sufficienti caratteri per leggere la len del pacchetto */
 		return (FALSE); 	
 		
 
 	if (get_packet_len ((*reg).BLR) == n){
 		f = get_frame_buffer((*reg).BLR);
-		x = mac2nsta((*f).addr1);
-		printf (_Csta "STA %d: Pacchetto completo ricevuto \n" _CColor_Off, x);
+		x = (*reg).ns;
+		printf (_Csta "STA %d : Pacchetto completo ricevuto \n" _CColor_Off, x+1);
+		free (f);
 		return (TRUE);
 	}
 	else
 		return (FALSE);
 	
-}
-
-/* ------------------------------------------------------------------------- */
-
-/* ######################################################################### */
-/* ######################################################################### */
-
-void resetta_buffer_ricezione (sta_registry_t* reg) {
-
-	/*
-		deve resettare sia il buffer in cui si accumulano i dati provenienti dal mezzo
-		(il buffer si considera resettato se i caratteri dei primi 3 indici sono 0 2 1)
-		sia la lista che contiene i vari pacchetti di questo blocco
-	*/
-
 }
 
 /* ------------------------------------------------------------------------- */
@@ -100,26 +86,23 @@ void continua_trasmissione (void) {
 
 int sta_prendi_pacchetto (stato_sta_t *s, sta_registry_t* reg) {
 	int n, ns;
-	char* fb;				/* struttura d'appoggio */
-	pframe_t *f;
-	int x;
+	char pack[_max_frame_buffer_size];				/* struttura d'appoggio */
 
 	ns = (*reg).ns;
-	fb = (char *) malloc (_max_frame_buffer_size * sizeof(char));
 		
+	printf("STA %d : IN LETTURA  \n", ns+1);
+
+	(*reg).in_trasmissione = FALSE;
+	(*reg).in_ricezione = TRUE;
+	(*reg).RTS = FALSE;	
+
+	/* Leggiamo il pacchetto arrivato */	
+	do {
+		n = recv (stafd_g [ns], pack, _max_frame_buffer_size, 0);
+	} while ((n<0) && (errno==EINTR));
 	
-	if (FD_ISSET (stafd_g [ns], &(*s).Rset)) {
-printf("STA %d: IN LETTURA  \t", ns+1);
-		/* Leggiamo il pacchetto arrivato */	
-		do {
-			n = recv (stafd_g [ns], fb, _max_frame_buffer_size, 0);
-		} while ((n<0) && (errno==EINTR));
-		
-		f = get_frame_buffer(fb);
-		x = mac2nsta((*f).addr1);
-printf("%d \t", x);
-		(*reg).x = appendi_pacchetto((*reg).BLR, fb, (*reg).x, n);
-	}
+	(*reg).x = appendi_pacchetto((*reg).BLR, pack, (*reg).x, n, ns);
+
 	return ((*reg).x);
 }
 	
@@ -132,9 +115,13 @@ char CRC_zero (sta_registry_t* reg) {
 	pack = (*reg).BLR;			
 	f = get_frame_buffer(pack);	/* Spacchetto il pacchetto nel frame */
 	if ((*f).crc == 0) {
+		free (f);
 		return TRUE;
 	}
-	else return (FALSE);
+	else {
+	free (f);
+	return (FALSE);
+	}
 
 }
 
@@ -151,11 +138,14 @@ int is_CTS(sta_registry_t* reg) {
 	f = get_frame_buffer(pack);	/* Spacchetto il pacchetto nel frame */
 
 	if((*f).cts == 1) {
-		printf (_Csta "STA %d: Pacchetto CTS ricevuto \n" _CColor_Off, ns+1);
+		printf (_Csta "STA %d : Pacchetto CTS ricevuto \n" _CColor_Off, ns+1);
+		free (f);
 		return TRUE;
 	}
-	else return FALSE;
-
+	else {
+	free (f);
+	return FALSE;
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -171,11 +161,14 @@ int is_RTS(sta_registry_t* reg) {
 	f = get_frame_buffer(pack);	/* Spacchetto il pacchetto nel frame */
 
 	if((*f).rts == 1) {
-		printf (_Csta "STA %d: Pacchetto RTS ricevuto \n" _CColor_Off, ns+1);
+		printf (_Csta "STA %d : Pacchetto RTS ricevuto \n" _CColor_Off, ns+1);
+		free (f);
 		return TRUE;
 	}
-	else return FALSE;
-
+	else {
+	free (f);	
+	return FALSE;
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -207,13 +200,16 @@ char pacchetto_nostro(sta_registry_t* reg) {
 	ns = (*reg).ns;
 
 	f = get_frame_buffer((*reg).BLR);								/* Spacchetto il pacchetto nel frame */
-	x = strncmp((*f).addr1, stazione_g [ns].mac, 6);		/* metto a confronto i due indirizzi mac  */
+	x = strncmp((*f).addr1, stazione_g [ns].mac, 6);				/* metto a confronto i due indirizzi mac  */
 	if (x == 0) {
 		printf (_Csta "Stazione %d -- Arrivato pacchetto \n" _CColor_Off,ns+1);
+		free (f);
 		return (TRUE);
 	}
-	else return (FALSE);
-		
+	else {
+	free (f);		
+	return (FALSE);
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -223,28 +219,30 @@ char buffer_trasmissione_vuoto(sta_registry_t* reg) { 	/* bisogna controllare se
 
 	x = (*reg).ns;
 
-	if (((*reg).BLT [0] == 0) && ((*reg).BLT [1] == 2) && ((*reg).BLT [2] == 1)) {	/* Sequenza che indica buffer vuoto */
-
 		if (fifo_is_empty(LTL [x])) {
  			return TRUE;
 		}
-		else return FALSE;
-	}
-	else return FALSE;
+		else {
+		printf("Fifo di %d non vuota \n", x+1);		
+		return FALSE;
+		}
 }
 
 /* ------------------------------------------------------------------------- */
 
 char buffer_allocato(sta_registry_t* reg) {
 	int x;
-	
+
 	x = (*reg).ns;
 
-	if (fifo_is_empty((*reg).LTT [x+1])) {			/* Se la lista temporanea di trasmissione è vuota */
+
+	if (fifo_is_empty((*reg).LTT)) {			/* Se la lista temporanea di trasmissione è vuota */
 		return FALSE;
 	}
-	else return TRUE;
-
+	else {
+	printf("Lista tmp di %d non vuota \n", x+1);
+	return TRUE;
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -255,9 +253,9 @@ void prepara_buffer(sta_registry_t* reg){
 
 	x = (*reg).ns;
 
-	if (fifo_read(LTL [x+1], fb)) {	/*  Dato che c'è qualcosa da leggere lo trasferisco nella lista temporanea di trasmissione*/
+	if (fifo_read(LTL[x], fb)) {	/*  Dato che c'è qualcosa da leggere lo trasferisco nella lista temporanea di trasmissione*/
 
-		fifo_push((*reg).LTT [x+1], fb);	
+		fifo_push((*reg).LTT, fb);	
 		
 	}
 	
@@ -282,15 +280,17 @@ char mezzo_disponibile(sta_registry_t* reg) {
 void spedisci_RTS(sta_registry_t* reg, stato_sta_t *s) {
 	int len, nwrite, n, ns;
 	pframe_t *f = (pframe_t*) malloc (sizeof (pframe_t));	
-	pframe_t *g = (pframe_t*) malloc (sizeof (pframe_t));			
+	pframe_t *g;			
 	char* fb;				 /* Frame buffer (con campo dati a zero) */
-	list2 *p;	
+	char pack[_max_frame_buffer_size];	
 
 	ns = (*reg).ns;
 	FD_SET (stafd_g[ns], &(*s).Wset);
 	
-	p = (*reg).LTT [ns+1];
-	g = get_frame_buffer((*p).pack);
+	fifo_read ((*reg).LTT, pack);
+	g = get_frame_buffer(pack);
+
+
 
 	/* Impostiamo i campi del frame da spedire */
 	bzero (f,sizeof (pframe_t));
@@ -303,7 +303,7 @@ void spedisci_RTS(sta_registry_t* reg, stato_sta_t *s) {
 	(*f).scan = 1;									/* scansione - utilizzata per richiedere il collegamento al mezzo */
 	(*f).duration = 5;	
 	(*f).packetl = _pframe_other_len;				/* Lunghezza base del pacchetto (non ci sono dati) */
-	strncpy ((*f).addr1, (*g).addr1,6);				/* mac6 del destinatario */
+	strncpy ((*f).addr1,(*g).addr1,6);				/* mac6 del destinatario */
 	strncpy ((*f).addr2,stazione_g [ns].mac,6);		/* mac address della stazione che sta trasmettendo */
 	strncpy ((*f).addr3,"000000",6);
 	strncpy ((*f).addr4,"000000",6);
@@ -329,6 +329,8 @@ void spedisci_RTS(sta_registry_t* reg, stato_sta_t *s) {
 		fflush(stdout);
 	}
 	printf (_Csta "STA %d : Pacchetto RTS inviato \n" _CColor_Off, ns+1);
+	free (g);
+	free (f);
 	(*reg).in_trasmissione = TRUE;
 	(*reg).in_ricezione = FALSE;
 	(*reg).RTS = TRUE;
@@ -340,14 +342,17 @@ void spedisci_CTS(sta_registry_t* reg, stato_sta_t *s) {
 	int len, nwrite, n, ns;
 	pframe_t *f = (pframe_t*) malloc (sizeof (pframe_t));	
 	pframe_t *g;			
-	char* fb;				 /* Frame buffer (con campo dati a zero) */
-	list2 *p;	
+	char* fb;				 /* Frame buffer (con campo dati a zero) */	
+	char pack[_max_frame_buffer_size];
+	int x;
 
 	ns = (*reg).ns;
 	FD_SET (stafd_g[ns], &(*s).Wset);
 	
-	p = (*reg).LTT [ns+1];
-	g = get_frame_buffer((*p).pack);
+	/*fifo_read ((*reg).LTT, pack);*/
+	g = get_frame_buffer((*reg).BLR);
+
+	x = mac2nsta((*g).addr2);
 
 	/* Impostiamo i campi del frame da spedire */
 	bzero (f,sizeof (pframe_t));
@@ -360,7 +365,7 @@ void spedisci_CTS(sta_registry_t* reg, stato_sta_t *s) {
 	(*f).scan = 1;									/* scansione - utilizzata per richiedere il collegamento al mezzo */
 	(*f).duration = 5;	
 	(*f).packetl = _pframe_other_len;				/* Lunghezza base del pacchetto (non ci sono dati) */
-	strncpy ((*f).addr1, (*g).addr1,6);				/* mac6 del destinatario */
+	strncpy ((*f).addr1, (*g).addr2,6);				/* mac6 del destinatario */
 	strncpy ((*f).addr2,stazione_g [ns].mac,6);		/* mac address della stazione che sta trasmettendo */
 	strncpy ((*f).addr3,"000000",6);
 	strncpy ((*f).addr4,"000000",6);
@@ -385,7 +390,11 @@ void spedisci_CTS(sta_registry_t* reg, stato_sta_t *s) {
 		perror(msgerror);
 		fflush(stdout);
 	}
-	printf (_Csta "STA %d : Pacchetto CTS inviato \n" _CColor_Off, ns+1);
+	printf (_Csta "STA %d a STA %d: Pacchetto CTS inviato \n" _CColor_Off, ns+1, x);
+
+	
+	free (g);
+	free (f);
 	(*reg).in_trasmissione = TRUE;
 	(*reg).in_ricezione = FALSE;
 	(*reg).RTS = FALSE;
@@ -408,27 +417,26 @@ char spedito_RTS(sta_registry_t* reg) {
 
 void spedisci_pacchetto(sta_registry_t* reg, stato_sta_t *s) {
 	int nwrite, len, n, ns;
-	pframe_t *f = (pframe_t*) malloc (sizeof (pframe_t));
-	char* buf;				/*  */ 								
-	list2 *p;						
+	pframe_t *f = (pframe_t*) malloc (sizeof (pframe_t));															
 
 	ns = (*reg).ns;	
-	p = (*reg).LTT [ns+1];
-	buf = (*reg).BLT;
 
-	if (fifo_read(p, buf)) {		/* Se c'è un elemento nella lista lo metto nel buffer di trasmissione e spedisco */
+	if (fifo_read((*reg).LTT, (*reg).BLT)) {		/* Se c'è un elemento nella lista lo metto nel buffer di trasmissione e spedisco */
 
 		/*FD_SET (stafd_g[ns], &(*s).Wset);*/
 
-		f = get_frame_buffer(buf);
+		f = get_frame_buffer((*reg).BLT);
 
 		len = (*f).packetl;
 		nwrite=0;
 
-		while( (n = write(stafd_g [ns], &(buf[nwrite]), len-nwrite)) >0 ) {
+		while( (n = write(stafd_g [ns], &((*reg).BLT[nwrite]), len-nwrite)) >0 ) {
 			printf( "BYTE %d \t", n);
 			nwrite+=n;	
 		}
+
+
+		free (f);
 	}
 
 }
@@ -438,22 +446,41 @@ void spedisci_pacchetto(sta_registry_t* reg, stato_sta_t *s) {
 void aggiorna_MC(sta_registry_t* reg) {
 	long i, x;
 	pframe_t *f;
+	char pack[_max_frame_buffer_size];
 
-	f = get_frame_buffer((*reg).BLT);
+	fifo_read ((*reg).LTT, pack);
+	f = get_frame_buffer(pack);
+
 	x = (*f).duration;
 	i = getNOWmsec() + x;
-	
 
 	imposta_tempo_occupazione_MC(_t_busy_normal, i, reg);
+	free(f);
 	
 }
 
 /* ------------------------------------------------------------------------- */
 
-void reset_indice(void) {}
-void reset_buffer(void) {}
+void reset_buffer(sta_registry_t* reg) {
+	int ns;
+	/*
+		deve resettare sia il buffer in cui si accumulano i dati provenienti dal mezzo
+		(il buffer si considera resettato se i caratteri dei primi 3 indici sono 0 2 1)
+		sia la lista che contiene i vari pacchetti di questo blocco
+	*/
+	
+	ns = (*reg).ns;
+	printf(_Csta "STA %d : Il pacchetto non e' per noi. Reset buffer. \n" _CColor_Off, (ns+1));
+	fifo_reset((*reg).LTT);
+	(*reg).BLT [0] = 0; (*reg).BLT [1] = 2; (*reg).BLT [2] = 1;	/* Sequenza che indica pacchetto vuoto */
+	(*reg).x = 0;
+	(*reg).in_trasmissione = FALSE;
+	(*reg).in_ricezione = FALSE;
+	(*reg).RTS = FALSE;
 
+} 
 
+/* ------------------------------------------------------------------------- */
 
 int is_ACK(sta_registry_t* reg) {return 0;}
 
@@ -466,7 +493,7 @@ void aggiungi_pacchetto(sta_registry_t* reg) {}
 int scaduto_timeout_ACK(void) {return 0;}
 
 
-
+void reset_parametri(void) {}
 
 /* ######################################################################### */
 /* ######################################################################### */

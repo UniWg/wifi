@@ -290,6 +290,8 @@ void spedisci_RTS(sta_registry_t* reg, stato_sta_t *s) {
 	fifo_read ((*reg).LTT, pack);
 	g = get_frame_buffer(pack);
 
+
+
 	/* Impostiamo i campi del frame da spedire */
 	bzero (f,sizeof (pframe_t));
 	(*f).data = 0;									/* frame di controllo */
@@ -341,13 +343,15 @@ void spedisci_CTS(sta_registry_t* reg, stato_sta_t *s) {
 	pframe_t *f = (pframe_t*) malloc (sizeof (pframe_t));	
 	pframe_t *g;			
 	char* fb;				 /* Frame buffer (con campo dati a zero) */	
-	char pack[_max_frame_buffer_size];
+	int x;
 
 	ns = (*reg).ns;
 	FD_SET (stafd_g[ns], &(*s).Wset);
 	
-	fifo_read ((*reg).LTT, pack);
-	g = get_frame_buffer(pack);
+	/*fifo_read ((*reg).LTT, pack);*/
+	g = get_frame_buffer((*reg).BLR);
+
+	x = mac2nsta((*g).addr2);
 
 	/* Impostiamo i campi del frame da spedire */
 	bzero (f,sizeof (pframe_t));
@@ -385,7 +389,7 @@ void spedisci_CTS(sta_registry_t* reg, stato_sta_t *s) {
 		perror(msgerror);
 		fflush(stdout);
 	}
-	printf (_Csta "STA %d : Pacchetto CTS inviato \n" _CColor_Off, ns+1);
+	printf (_Csta "STA %d a STA %d: Pacchetto CTS inviato \n" _CColor_Off, ns+1, x);
 
 	
 	free (g);

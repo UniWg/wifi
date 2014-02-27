@@ -186,8 +186,10 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 							imposta_tempo_occupazione_MC(_t_busy_error, 0, reg);
 
 						}
+					
+						aggiorna_MC(reg);
+
 						/* ... e bisogna controllare se il pacchetto che è arrivato è nostro */
-						
 						if (pacchetto_nostro(reg)) {	
 		
 							if (is_CTS(reg)) {
@@ -212,7 +214,7 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 						}
 						else {
 							/* Se siamo qui vuol dire che bisogna scartare il pacchetto */
-							aggiorna_MC(reg);
+							
 
 							reset_buffer(reg);
 						}
