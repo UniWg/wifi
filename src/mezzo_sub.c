@@ -218,7 +218,7 @@ void controlla_conflitto_di_destinazioni (area_t* aree) {
 				quindi la stazione che aveva mandato (per esempio) un RTS non si vedrà arrivare risposta e
 				rileverà l'errore causa timeout */	
 			
-			/*
+			
 			if ((aree [0].arrivo > 0) && (aree [1].arrivo > 0)) {
 				if (aree [0].arrivo < aree [1].arrivo)	i=0;
 				else	i=1;	
@@ -228,7 +228,7 @@ void controlla_conflitto_di_destinazioni (area_t* aree) {
 				aree [i].errore_in_corso = FALSE;
 				aree [i].spedita_prima_parte_errore = FALSE;
 			}
-			*/
+			
 			
 		
 					
@@ -292,7 +292,9 @@ void spedisci_prima_parte_pacchetto (stato_t *s,area_t* aree) {
 					nwrite=0;
 					while ((n = write((*s).clientfd [k], aree [i].pack, len-nwrite)) >0)
 						nwrite+=n;
-					printf (_Cmezzo "%d Spedito primi n-1 byte a stazione %d\n" _CColor_Off,mitt,k+1);
+					#if MC_DEBUG == 1
+						printf (_Cmezzo "%d Spedito primi n-1 byte a stazione %d\n" _CColor_Off,mitt,k+1);
+					#endif
 				}
 			}
 
@@ -328,7 +330,9 @@ void spedisci_ultimo_byte (stato_t *s,area_t* aree) {
 					nwrite=0;
 					while ((n = write((*s).clientfd [k], buf, len-nwrite)) >0)
 						nwrite+=n;
-					printf (_Cmezzo "%d Spedito ultimo byte a stazione %d\n" _CColor_Off,mitt,k+1);
+					#if MC_DEBUG == 1
+						printf (_Cmezzo "%d Spedito ultimo byte a stazione %d\n" _CColor_Off,mitt,k+1);
+					#endif
 				}
 			}
 			
@@ -420,7 +424,9 @@ void spedisci_prima_parte_crc0_mittente (stato_t *s,area_t* aree) {
 			nwrite=0;
 			while ((n = write((*s).clientfd [mitt-1], aree [i].pack, len-nwrite)) >0)
 				nwrite+=n;
-			printf (_Cmezzo "%d Spedito primi n-1 byte a stazione mittente %d\n" _CColor_Off,mitt,mitt);
+			#if MC_DEBUG == 1
+				printf (_Cmezzo "%d Spedito primi n-1 byte a stazione mittente %d\n" _CColor_Off,mitt,mitt);
+			#endif 
 			
 			
 			aree [i].spedita_prima_parte_errore = TRUE;	/* I primi n-1 byte sono stati spediti */
@@ -451,7 +457,9 @@ void spedisci_ultimo_byte_crc0_mittente (stato_t *s,area_t* aree) {
 			nwrite=0;
 			while ((n = write((*s).clientfd [mitt-1], buf, len-nwrite)) >0)
 				nwrite+=n;
-			printf (_Cmezzo "%d Spedito ultimo byte a stazione %d\n" _CColor_Off,mitt,mitt);
+			#if MC_DEBUG == 1
+				printf (_Cmezzo "%d Spedito ultimo byte a stazione %d\n" _CColor_Off,mitt,mitt);
+			#endif
 
 			
 			/* Togliamo il pacchetto dal buffer */
