@@ -52,6 +52,7 @@ typedef struct {
 
 pthread_t mc_thread_g;		/* identificativo del thread del mezzo condiviso */
 int mezzofd_g;				/* fd del mezzo condiviso */
+int max_fd;					/* descrittore più alto */
 
 /* ------------------------------------------------------------------------- */
 /* --- Prototipi delle funzioni --- */

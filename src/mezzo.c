@@ -250,11 +250,10 @@ void select_setup (stato_t *s) {
 	FD_ZERO (&(*s).Rset);
 	FD_ZERO (&(*s).Wset);
 	FD_SET ((*s).mezzofd, &(*s).Rset);
-	/* Mettiamo in lettura e scrittura tutti i descrittori delle stazioni */
+	/* Mettiamo in lettura tutti i descrittori delle stazioni */
 	for (i=0;i<_nsta;i++) {
 		int fd = (*s).clientfd [i];
 		FD_SET (fd,&(*s).Rset);
-		/*FD_SET (fd,&(*s).Wset);*/
 	}
 }
 
@@ -304,6 +303,7 @@ void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
 			/* Il pacchetto viene scartato. L'area verrà tolta dallo stato di errore nel momento in cui
 				il pacchetto con CRC = 0 è stato mandato a tutti i mittenti */
 		}
+		free (f);
 	} 
 	/* #### SCADUTO TIMEOUT DELLA SELECT (100ms) ################################## */
 	else {
@@ -333,57 +333,6 @@ void vita_mezzo (stato_t *s,timev_t *t,area_t* aree) {
 	}
 }
 
-/* ------------------------------------------------------------------------- */
-/* ######################################################################### */
-/* #### DA CANCELLARE ###################################################### */
-
-void vita_mezzo_0 (stato_t *s,timev_t *t) {
-	int numero_eventi,i,j,k,n,len,nwrite;
-	pframe_t* f;
-	char mac [18];
-
-	do {
-		select_setup (s);
-		numero_eventi = select ((*s).fdtop+1,&(*s).Rset,&(*s).Wset,NULL,t);
-	} while ((numero_eventi<0) && (errno==EINTR));
-	
-	if (numero_eventi < 0) {
-		printf (_Cerror "Mezzo Condiviso : Errore nella select di attesa connessioni\n" _CColor_Off);
-		fflush (stderr);
-		exit (-1);
-	}
-	
-	/* Controlliamo tutti gli eventi che si sono verificati */
-	for (i=0;i<numero_eventi;i++) {
-		/* Controlliamo quali descrittori sono settati */
-		for (j=0;j<_nsta;j++) {
-			if (FD_ISSET ((*s).clientfd [j],&(*s).Rset)) {
-				/* Leggo il frame ... */
-				do {
-					n = recv ((*s).clientfd [j],(*s).clibuf [j].buf,_maxbuflen,0);
-				} while ((n<0) && (errno==EINTR));
-				/* ... poi lo spacchetto per ottenere il mac del mittente e destinatario */
-				f = get_frame_buffer ((*s).clibuf [j].buf);
-				str2mac ((*f).addr2,mac);	/* mac mittente */
-				printf (_Cmezzo "Stazione %s: ricevuto messaggio <%s>\n" _CColor_Off,mac,(*f).buf);
-				
-				/* Ora giriamo il frame a tutte le stazioni che si trovano nel campo del mittente */
-				for (k=0;k<_nsta;k++) {
-					/* and logico tra il numero della stazione e la configurazione del campo di visibilità del mittente */
-					/* in pratica serve per dedurre le stazioni raggiungibili */
-					if (_campo_stax [k] & _sta_di_stax [j]) {
-						len = (*f).packetl;
-						nwrite=0;
-						while( (n = write((*s).clientfd [k], &(*s).clibuf [j].buf [nwrite], len-nwrite)) >0 )
-							nwrite+=n;
-						printf (_Cmezzo "Spedito messaggio a stazione %d\n" _CColor_Off,k+1);
-					}
-				}
-			}
-		}
-	}
-}
-
 /* ------------------------------------------------------------------------- 
 * Nome			: carlo
 * Descrizione	: Thread principale del mezzo condiviso
@@ -402,6 +351,7 @@ void* main_mc_thread (void* param) {
 	/* Prima di procedere tutte le stazioni devono essere collegate */
 	init_stato (&stato);
 	wait_for_sta_connection (&stato);
+	max_fd = stato.fdtop;
 	
 	/* Impostiamo il timeout di 100msec */
 	t.tv_sec = 0; t.tv_usec = 100000;
@@ -435,3 +385,7 @@ void start_mc_thread (void) {
 }
 
 /* ------------------------------------------------------------------------- */
+
+
+
+

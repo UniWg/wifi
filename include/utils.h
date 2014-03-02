@@ -51,10 +51,26 @@ int mac2nsta (char* mac);
 
 /* ----------------------------------------------------------------------------
 * Nome			: 
+* Descrizione	: dato il numero di stazione restituisce il relativo mac6
+* Par. Formali  :
+			- n : numero della stazione (1..4)
+			- mac : mac address della stazione nel formato 6 byte (ritorno)
+---------------------------------------------------------------------------- */
+void nsta2mac (int n,char* mac);
+
+/* ----------------------------------------------------------------------------
+* Nome			: 
 * Descrizione	: Restituisce epoch in millisecondi
 * Par. Ritorno  : tempo attuale in millisecondi
 ---------------------------------------------------------------------------- */
 long getNOWmsec (void);
+
+/* ----------------------------------------------------------------------------
+* Nome			: 
+* Descrizione	: Restituisce epoch in secondi (2 cifre)
+* Par. Ritorno  : tempo attuale in secondi
+---------------------------------------------------------------------------- */
+int tempo_progressivo (void);
 
 /* ----------------------------------------------------------------------------
 * Nome			: 

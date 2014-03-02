@@ -71,15 +71,37 @@ int mac2nsta (char* mac) {
 }
 
 /* ------------------------------------------------------------------------- */
+void nsta2mac (int n,char* mac) {
+	int i;
+	
+	if (n<=_nsta) {
+		mac2str (_mac_stax [n-1],mac);
+	} 
+	else {						/* Errore. Mettiamo il mac a zero */
+		for (i=0;i<6;i++)		
+			mac [i] = '0';
+	}
+}
 
+
+/* ------------------------------------------------------------------------- */
 long getNOWmsec (void) {
 	long epoca;
 	timev_t t;
 	
-	gettimeofday (&t,NULL);		/* prendiamo il tempo attuale */
-	epoca = t.tv_sec * 1000;	/* secondi : moltiplichiamo per 1000 per ottenere millisecondi */
-	epoca += t.tv_usec/1000;	/* microsecondi : dividiamo per 1000 per ottenere millisecondi */
+	gettimeofday (&t,NULL);					/* prendiamo il tempo attuale */
+	epoca = (t.tv_sec & 0xFFFFF) * 1000;	/* secondi : teniamo le prime 5 cifre e moltiplichiamo per 1000 per ottenere millisecondi */
+	epoca += t.tv_usec / 1000 ;				/* microsecondi : dividiamo per 1000 per ottenere millisecondi */
+
 	return (epoca);
+}
+
+/* ------------------------------------------------------------------------- */
+int tempo_progressivo (void) {
+	timev_t t;
+	
+	gettimeofday (&t,NULL);							/* prendiamo il tempo attuale */
+	return (((int)t.tv_sec & 0x63) +1 );			/* Restituiamo le prime 2 cifre dei secondi */
 }
 
 
@@ -127,11 +149,11 @@ char fifo_read (list2* s,char* pack) {
 /* --------------------------------- */
 char fifo_read_deep (list2* s,char* pack,int n) {
 	int i;
-	list2* p;
+	list2* p = s;
 	
 	/* Ci portiamo sull'elemento richiesto ... */
 	for (i=0;i<n;i++) {
-		p = s->prec;
+		p = p->prec;
 		if (p == s) 	return (FALSE);
 	}
 	
