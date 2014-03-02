@@ -89,10 +89,16 @@ long getNOWmsec (void) {
 	long epoca;
 	timev_t t;
 	
+<<<<<<< HEAD
 	gettimeofday (&t,NULL);					/* prendiamo il tempo attuale */
 	epoca = (t.tv_sec & 0xFFFFF) * 1000;	/* secondi : teniamo le prime 5 cifre e moltiplichiamo per 1000 per ottenere millisecondi */
 	epoca += t.tv_usec / 1000 ;				/* microsecondi : dividiamo per 1000 per ottenere millisecondi */
 
+=======
+	gettimeofday (&t,NULL);		/* prendiamo il tempo attuale */
+	epoca = (t.tv_sec & 0xFFFFF) * 1000;	/* secondi : teniamo le prime 5 cifre e moltiplichiamo per 1000 per ottenere millisecondi */
+	epoca += t.tv_usec/1000;	/* microsecondi : dividiamo per 1000 per ottenere millisecondi */
+>>>>>>> 6b6edd2a24a65bb52b1e54931c083fb505f9fbdd
 	return (epoca);
 }
 
