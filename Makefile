@@ -11,6 +11,9 @@ all:	wifi.bin
 applica: ${DIR_SRC}/applica.c
 	gcc -o ${DIR_OBJ}/applica.o -I ${DIR_HDR} -c ${GCCFLAGS} ${DIR_SRC}/applica.c
 
+applica_sub: ${DIR_SRC}/applica_sub.c
+	gcc -o ${DIR_OBJ}/applica_sub.o -I ${DIR_HDR} -c ${GCCFLAGS} ${DIR_SRC}/applica_sub.c
+
 main:	${DIR_SRC}/main.c
 	gcc -o ${DIR_OBJ}/main.o -I ${DIR_HDR} -c ${GCCFLAGS} ${DIR_SRC}/main.c
 
@@ -37,7 +40,7 @@ utils: ${DIR_SRC}/utils.c
 
 # Linker
 
-wifi.bin:	applica main mezzo mezzo_sub pseudo_frame read_write stazione stazione_sub utils
+wifi.bin:	applica applica_sub main mezzo mezzo_sub pseudo_frame read_write stazione stazione_sub utils
 	gcc -o wifi.bin ${LINKERFLAGS} ${DIR_OBJ}/*.o
 
 # Cancellazione dei file di compilazione
