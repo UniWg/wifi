@@ -6,21 +6,42 @@
 #define _t_busy_after 1
 #define _t_busy_error 2
 
+#define _t_timer_delay_min 4000		/* range per i timeout */
+#define _t_timer_delay_max 6000
+#define _timeout_consecutivi 2		/* Massimo numero di timout consecutivi permessi */
+
 /* ######################################################################### */
 /* ######################################################################### */
 
 typedef struct {
-	char BLT [_max_frame_buffer_size];			/* Buffer temporaneo di trasmissione */
-	char BLR [_max_frame_buffer_size];			/* Buffer temporaneo di ricezione  */
-	int x;										/* numeri di caratteri ricevuti nel BLR */
-	list2 *LTT;									/* Lista temporanea di trasmissione */
-	list2 *LTR;									/* Lista temporanea di ricezione */
+	int ns;										/* Numero della stazione 0..3 */
 	long t_mc_busy;								/* epoch occupazione mezzo */
 	char in_trasmissione;						/* TRUE : stiamo trasmettendo */
 	char in_ricezione;							/* TRUE : stiamo ricevendo */
-	char RTS;									/* TRUE : sessione di trasmissione : RTS spedito */
-	int ns;										/* numero della stazione */
+	char RTS;									/* TRUE : sessione si trasmissione : RTS spedito */
+	list2* LTT;									/* Lista temporanea di trasmissione */
+	list2* LTR;									/* Lista temporanea di ricezione */
+	char BLR [_max_frame_buffer_size];			/* Buffer per il pacchetto di input (si forma man mano che arrivano dati dal mezzo) */
+	int nBLR;									/* Dimensione attuale di BLR */
+	int nBLT;									/* Numero di pacchetti della sequenza realmente trasmessi */
+	long timeCTS;								/* timeout per ricezione CTS */
+	long timeACK;								/* timeout per ricezione ACK */
+	long timePACK;								/* timeout per ricezione pacchetto ben formato */
+	int nPACK;									/* Numero di timeout PACK consecutivi */
+	int lastProg [4];							/* Ultimo numero progressivo di ogni stazioni (0..4) */
 } sta_registry_t;
+
+
+/*
+	BRL -> Buffer Ricezione Locale	(dal mezzo verso la sta)
+	LRT -> Lista Ricezione Temporanea (lista della sta che una volta completata verrá trasferita alla app)
+	LRL -> Lista Ricezione Locale (lista della app)
+	
+	BTL -> Buffer Trasmissione Locale (dalla sta verso il mezzo)
+	LTT -> Lista Trasmissione Temporanea (lista della sta con i dati presi dalla app)
+	LTL -> Lista Trasmissione Locale (lista della app)
+	
+*/
 
 /* ------------------------------------------------------------------------- */
 /* ######################################################################### */
@@ -42,24 +63,14 @@ int appendi_pacchetto (char* dst, char* src, int nnow, int nadd, int ns);
 			- ns   : numero della stazione
 ---------------------------------------------------------------------------- */
 
-char frame_completo (int n, sta_registry_t* reg);
-/* ----------------------------------------------------------------------------
-* Nome			: luca
-* Descrizione	: Controlla se il pacchetto è stato ricevuto completo
-* Par. Ritorno	: restituisce TRUE se il pacchetto è completo
-* Par. Formali	: 
-			- n		: numero byte ricevuti
-			- reg	: registro della stazione
----------------------------------------------------------------------------- */
-
-
-int sta_prendi_pacchetto (stato_sta_t *s, sta_registry_t* reg);
+int sta_prendi_pacchetto (stato_sta_t *s, char* tmp_pack, sta_registry_t* reg);
 /* ----------------------------------------------------------------------------
 * Nome			: luca
 * Descrizione	: Riceve il pacchetto dati
 * Par. Ritorno	: Restituisce la lunghezza del pacchetto ricevuto
 * Par. Formali	:
 			- s 		: stato della stazione
+			- tmp_pack	: pacchetto di ricezione temporaneo
 			- reg		: registro della stazione
 ---------------------------------------------------------------------------- */
 
@@ -72,7 +83,7 @@ char CRC_zero (sta_registry_t* reg);
 			- reg	: registro della stazione
 ---------------------------------------------------------------------------- */
 
-int is_CTS(sta_registry_t* reg);
+char is_CTS(sta_registry_t* reg);
 /* ----------------------------------------------------------------------------
 * Nome			: luca
 * Descrizione	: Verifica se il pacchetto è un CTS
@@ -81,11 +92,20 @@ int is_CTS(sta_registry_t* reg);
 			- reg	: registro della stazione
 ---------------------------------------------------------------------------- */
 
-int is_RTS(sta_registry_t* reg);
+char is_RTS(sta_registry_t* reg);
 /* ----------------------------------------------------------------------------
 * Nome			: luca
 * Descrizione	: Verifica se il pacchetto è un RTS
 * Par. Ritorno	: TRUE se il pacchetto è un RTS, FALSE altrimenti
+* Par. Formali	: 
+			- reg	: registro della stazione
+---------------------------------------------------------------------------- */
+
+char is_ACK(sta_registry_t* reg);
+/* ----------------------------------------------------------------------------
+* Nome			: luca
+* Descrizione	: Verifica se il pacchetto è un ACK
+* Par. Ritorno	: TRUE se il pacchetto è un ACK, FALSE altrimenti
 * Par. Formali	: 
 			- reg	: registro della stazione
 ---------------------------------------------------------------------------- */
@@ -196,7 +216,42 @@ void spedisci_pacchetto(sta_registry_t* reg, stato_sta_t *s);
 			- s		: stato della stazione
 ---------------------------------------------------------------------------- */
 
-void reset_parametri (void);
+char  scaduto_timeout_PACK (sta_registry_t* reg);
+/* ----------------------------------------------------------------------------
+* Nome			: luca
+* Descrizione	: Verifica se é scaduto il timeout per la ricezione del pacchetto completo
+* Par. Ritorno	: Restituisce TRUE se c'é qualche elemento da spedire
+* Par. Formali	: 
+			- reg	: registro della stazione
+---------------------------------------------------------------------------- */
+
+void reset_parametri (sta_registry_t* reg, char force);
+/* ----------------------------------------------------------------------------
+* Descrizione	: Resetta l'indice dei pacchetti che arrivano
+* Par. Formali  :
+			- reg : registro di stato
+			- force : se TRUE forza il reset dei parametri. 
+					  se FALSE resetta i parametri solo se è scaduto il tempo di occupazione del mezzo
+---------------------------------------------------------------------------- */
+
+char pacchetto_completo (int n, char* tmp_pack, sta_registry_t* reg);
+/* ----------------------------------------------------------------------------
+* Descrizione	: Accoda il pacchetto temporaneo al BLR (reg.pack) e verifica 
+					se il pacchetto ottenuto é completo
+* Par. Ritorno  : Restituisce TRUE se il pacchetto é completo
+* Par. Formali  :
+			- tmp_pack : pacchetto di ricezione temporaneo
+			- len : lunghezza del pacchetto di ricezione temporaneo
+			- reg : registro di stato
+---------------------------------------------------------------------------- */
+
+long randomTime (long min,long max);
+/* ----------------------------------------------------------------------------
+* Descrizione	: Restituisce un numero casuale compreso tra min e max. Utilizzato per calcolare intervalli di tempo
+* Par. Formali  :
+			- min : tempo minimo in millisecondi
+			- max : tempo massimo in millisecondi
+---------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */
 
@@ -209,7 +264,7 @@ void reset_buffer(sta_registry_t* reg);
 /*####################DA COMPLETARE##########################################*/
 /*###########################################################################*/
 
-int is_ACK(sta_registry_t* reg);
+
 
 
 
@@ -228,9 +283,9 @@ void aggiungi_pacchetto(sta_registry_t* reg);
 
 void aggiorna_MC(sta_registry_t* reg);
 
-int scaduto_timeout_ACK(void);
+int scaduto_timeout_ACK(sta_registry_t* reg);
 
-
+int scaduto_timeout_CTS(sta_registry_t* reg); 
 
 
 

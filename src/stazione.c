@@ -150,6 +150,7 @@ void collega_stazione (int ns) {
 void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
      int save_errno, errno;
 	 int len=0;
+	 char tmp_pack [_max_frame_buffer_size];		/* Pacchetto che arriva dal mezzo */
 
 	while(1) {	
    	do {
@@ -173,81 +174,93 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
           /* È arrivato un pacchetto */ 
           if ((*s).nready > 0) {
 
-				  /* Prendiamo il pacchetto e lo "appendiamo" */
-                  len = sta_prendi_pacchetto(s, reg);
+				  /* Prendiamo il pacchetto */
+                  len = sta_prendi_pacchetto(s, tmp_pack, reg);
 
 				  /* Se il pacchetto è completo... */
-                  if (frame_completo(len, reg)) {
+                  if (pacchetto_completo(len, tmp_pack, reg)) {
+						(*reg).timePACK = 0;						/* Il pacchetto è completo. Disarmiamo il timeout */
+			 			(*reg).nBLR = 0;							
 						/* ... bisogna vedere se è il pacchetto è corrotto... */
 						if (CRC_zero(reg)) {		
 							
-							reset_parametri();
+							reset_parametri(reg, TRUE);
 							
 							imposta_tempo_occupazione_MC(_t_busy_error, 0, reg);
 
 						}
-					
-						aggiorna_MC(reg);
-
-						/* ... e bisogna controllare se il pacchetto che è arrivato è nostro */
-						if (pacchetto_nostro(reg)) {	
-		
-							if (is_CTS(reg)) {
-
-								if (spedito_RTS(reg)) {
-
-									spedisci_pacchetto(reg, s);
-								}
-							}
-							else if (is_ACK(reg)) {
-
-								continua_trasmissione ();
-							}
-							else if (is_RTS(reg)) {
-
-								spedisci_CTS(reg, s);
-							}
-							else { 
-								/* Allora si tratta di un pacchetto */
-								aggiungi_pacchetto(reg);
-							}
-						(*reg).x = 0;
-						}
 						else {
-							/* Se siamo qui vuol dire che bisogna scartare il pacchetto */
+							aggiorna_MC(reg);
+
+							/* ... e bisogna controllare se il pacchetto che è arrivato è nostro */
+							if (pacchetto_nostro(reg)) {	
+		
+								if (is_CTS(reg)) {
+
+									if (spedito_RTS(reg)) {			/*<-- DA COMPLETARE!!!!! */
+
+										spedisci_pacchetto(reg, s);
+									}
+								}
+								else if (is_ACK(reg)) {
+
+									continua_trasmissione ();
+								}
+								else if (is_RTS(reg)) {
+
+									spedisci_CTS(reg, s);
+								}
+								else { 
+									/* Allora si tratta di un pacchetto */
+									aggiungi_pacchetto(reg);
+								}
+						
+							}
+							else {
+								/* Se siamo qui vuol dire che bisogna scartare il pacchetto */
 							
 
-							reset_buffer(reg);
+								reset_buffer(reg);
+							}
 						}
 				}
-				/* Il pacchetto non è completo, bisogna accodare i dati nel buffer */
-				else {		
-					
-				}
+				
 		}
 	/* Scaduto timeout della select */
-	else {		
-			if (trasmissione(reg)) {
-				
-				if (scaduto_timeout_ACK()) {
+	else {	
 
-           			continua_trasmissione ();
-				}
+			if (scaduto_timeout_PACK (reg)) {
+				reset_parametri(reg, FALSE);
+				imposta_tempo_occupazione_MC(_t_busy_error, 0, reg);
 			}
-			else if (!ricezione(reg)) {
+			else {
+				if (trasmissione(reg)) {
+					if (scaduto_timeout_CTS(reg)) {
+						reset_parametri(reg, FALSE);
+						imposta_tempo_occupazione_MC(_t_busy_error, 0, reg);
+					}
+					else {
+						if (scaduto_timeout_ACK(reg)) {
 
-				if (mezzo_disponibile(reg)) {
-
-					 if (!buffer_trasmissione_vuoto(reg)) {		/* <-- DA COMPLETARE */
-
-						if (!buffer_allocato(reg)) {
-
-							prepara_buffer(reg);
+				   			continua_trasmissione ();
 						}
-							spedisci_RTS(reg, s);
+					}
 				}
+				else if (!ricezione(reg)) {
 
-				 }
+					if (mezzo_disponibile(reg)) {
+
+						 if (!buffer_trasmissione_vuoto(reg)) {		
+
+							if (!buffer_allocato(reg)) {
+
+								prepara_buffer(reg);
+							}
+								spedisci_RTS(reg, s);
+						 }
+					}
+								
+				}
 			}
 		}
 	}	
@@ -270,16 +283,20 @@ void* main_sta_thread (void* nsp) {
 	sleep (2);
 
 	/* Inizializziamo il registro della stazione */
-	reg.BLT [0] = 0; reg.BLT [1] = 2; reg.BLT [2] = 1;	/* Sequenza che indica pacchetto vuoto */
-	reg.BLR [0] = 0; reg.BLR [1] = 2; reg.BLR [2] = 1;	/* Sequenza che indica pacchetto vuoto */
-	reg.x = 0;
-	reg.LTT  = fifo_create();							
-	reg.LTR  = fifo_create();
+	reg.LTT  = fifo_create();			/* Creiamo la LTT (vuota con sentinella) */				
+	reg.LTR  = fifo_create();			/* Creiamo la LTR (vuota con sentinella) */
 	reg.t_mc_busy = 0;
 	reg.in_trasmissione = FALSE;
 	reg.in_ricezione = FALSE;
 	reg.RTS = FALSE;
+	reg.nBLR = 0;						/* Il buffer di ricezione é inizialmente vuoto */
+	reg.nBLT = 0;						/* All'inizio non abbiamo nessun pacchetto trasmesso */
+	reg.timeCTS = 0;					/* Se i timer sono a zero allora sono disabilitati */
+	reg.timeACK = 0;	
+	reg.timePACK = 0;
+	reg.nPACK = 0;
 	reg.ns = ns;
+	reg.lastProg[ns] = -1;
 	
 	/* Impostiamo il timeout per la select di 100 msec. */
 	t.tv_sec = 0; t.tv_usec = 100000;

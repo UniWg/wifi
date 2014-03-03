@@ -82,49 +82,20 @@ void nsta2mac (int n,char* mac) {
 			mac [i] = '0';
 	}
 }
-<<<<<<< HEAD
 
 
-=======
-
-
->>>>>>> 346a338a7aa1cad0d74e95cd014eba2f56eb8b0a
 /* ------------------------------------------------------------------------- */
 long getNOWmsec (void) {
 	long epoca;
 	timev_t t;
 	
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 346a338a7aa1cad0d74e95cd014eba2f56eb8b0a
 	gettimeofday (&t,NULL);					/* prendiamo il tempo attuale */
 	epoca = (t.tv_sec & 0xFFFFF) * 1000;	/* secondi : teniamo le prime 5 cifre e moltiplichiamo per 1000 per ottenere millisecondi */
 	epoca += t.tv_usec / 1000 ;				/* microsecondi : dividiamo per 1000 per ottenere millisecondi */
 
-<<<<<<< HEAD
 	return (epoca);
 }
 
-=======
-=======
-	gettimeofday (&t,NULL);		/* prendiamo il tempo attuale */
-	epoca = (t.tv_sec & 0xFFFFF) * 1000;	/* secondi : teniamo le prime 5 cifre e moltiplichiamo per 1000 per ottenere millisecondi */
-	epoca += t.tv_usec/1000;	/* microsecondi : dividiamo per 1000 per ottenere millisecondi */
->>>>>>> 6b6edd2a24a65bb52b1e54931c083fb505f9fbdd
-	return (epoca);
-}
-
-/* ------------------------------------------------------------------------- */
-int tempo_progressivo (void) {
-	timev_t t;
-	
-	gettimeofday (&t,NULL);							/* prendiamo il tempo attuale */
-	return (((int)t.tv_sec & 0x63) +1 );			/* Restituiamo le prime 2 cifre dei secondi */
-}
-
-
->>>>>>> 346a338a7aa1cad0d74e95cd014eba2f56eb8b0a
 /* ------------------------------------------------------------------------- */
 
 /* --------------------------------- */

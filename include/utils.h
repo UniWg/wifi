@@ -67,13 +67,6 @@ long getNOWmsec (void);
 
 /* ----------------------------------------------------------------------------
 * Nome			: 
-* Descrizione	: Restituisce epoch in secondi (2 cifre)
-* Par. Ritorno  : tempo attuale in secondi
----------------------------------------------------------------------------- */
-int tempo_progressivo (void);
-
-/* ----------------------------------------------------------------------------
-* Nome			: 
 * Descrizione	: Crea una lista circolare con la sentinella inizializzata
 * Par. Ritorno  : Restituisce il puntatore alle sentinella
 ---------------------------------------------------------------------------- */

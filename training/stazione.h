@@ -6,6 +6,7 @@
 
 /* Numero delle stazioni */
 #define _nsta 4
+
 #define _Csta _CGreen		/* Colore dei messaggi delle stazioni */
 
 /* Aree di visibilità delle stazioni */
@@ -52,13 +53,13 @@ extern const char _mac_stax [][17];
 	fd_set Rset;		/* fd da controllare il lettura */
 	fd_set Wset;		/* fd da controllare in scrittura */
 	int fdtop; 			/* fd da monitorare con valore più alto */
-	/*int stafd;*/			/* fd della stazione */
+	int stafd;			/* fd della stazione */
 	int mezzofd;		/* fd del mezzo condiviso */
 } stato_sta_t;
-
+ 
 list2* LTL [_nsta];					/* Lista di Trasmissione Locale (condivisa con l'applicazione) ... */
 pthread_mutex_t mutexLTL [_nsta];	/* ... e relative mutex */
-
+ 
 /* ------------------------------------------------------------------------- */
 /* Variabili globali */ 
 station_t stazione_g [_nsta];	/* identità delle stazioni */
@@ -67,7 +68,7 @@ int stafd_g [_nsta];			/* fd delle stazioni */
 /* ------------------------------------------------------------------------- */
 /* Prototipi delle funzioni */
 
-
+void inizializza_stazioni (void);
 /* ----------------------------------------------------------------------------
 * Nome			: 
 * Descrizione	: inizializza la struttura dati delle stazioni definendo:
@@ -75,13 +76,12 @@ int stafd_g [_nsta];			/* fd delle stazioni */
 					- mac address
 					- campo di visibilità elettromagnetica
 ---------------------------------------------------------------------------- */
-void inizializza_stazioni (void);
 
+void start_sta_thread (void);
 /* ----------------------------------------------------------------------------
 * Nome			: 
 * Descrizione	: lancia i thread delle stazioni
 ---------------------------------------------------------------------------- */
-void start_sta_thread (void);
 
 #endif
 

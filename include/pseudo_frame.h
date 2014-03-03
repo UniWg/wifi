@@ -125,7 +125,7 @@ void remove_pframe (pframe_t* pf);
 			- n : numero di byte attualmente ricevuti
 			- buf : buffer del pacchetto
 ---------------------------------------------------------------------------- */
-char complete_frame (int n, char* buf);
+char complete_frame (int n,char* buf);
 
 /* ----------------------------------------------------------------------------
 * Nome			: carlo
@@ -160,7 +160,6 @@ char* pacchetto_di_controllo (char tipo,char* mitt,char* dest);
 ---------------------------------------------------------------------------- */
 int get_packet_len (char* buf);
 
-int get_packet_len (char* buf);
 #endif
 
 
