@@ -533,7 +533,7 @@ char scaduto_timeout_PACK (sta_registry_t* reg) {
 		return (TRUE);
 	}
 	
-	if (((*reg).timePACK > 0) && ((*reg).timePACK<now))	{ 
+reset	if (((*reg).timePACK > 0) && ((*reg).timePACK<now))	{ 
 		#if STA_DEBUG == 1		
 			printf (_CBIYellow"sta%d scaduto PACK\n"_CColor_Off ,(*reg).ns+1);			/* Scaduto tempo di composizione del pacchetto */
 		#endif
