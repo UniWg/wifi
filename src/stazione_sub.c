@@ -144,10 +144,6 @@ int sta_prendi_pacchetto (stato_sta_t *s, char* tmp_pack, sta_registry_t* reg) {
 		
 	/*printf("STA %d : IN LETTURA  \n", ns+1);*/
 
-	(*reg).in_trasmissione = FALSE;
-	(*reg).in_ricezione = TRUE;
-	(*reg).RTS = FALSE;	
-
 	/* Leggiamo il pacchetto arrivato */	
 	do {
 		n = recv (stafd_g [ns], tmp_pack, _max_frame_buffer_size, 0);
@@ -477,8 +473,6 @@ void spedisci_CTS(sta_registry_t* reg, stato_sta_t *s) {
 	/* Ci mettiamo in ricezione */
 	(*reg).in_trasmissione = FALSE;
 	(*reg).in_ricezione = TRUE;
-	(*reg).RTS = TRUE;
-
 }
 
 /* ------------------------------------------------------------------------- */
@@ -529,8 +523,6 @@ void spedisci_ACK(sta_registry_t* reg, char ultimo){
 
 char spedito_RTS(sta_registry_t* reg) {
 	
-	printf("%d -- \n", (*reg).RTS);
-	(*reg).RTS = TRUE;
 	if((*reg).RTS) {
 		(*reg).RTS = FALSE;
 		return TRUE;

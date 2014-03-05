@@ -157,8 +157,7 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
      int save_errno, errno;
 	 int len=0;
 	 char tmp_pack [_max_frame_buffer_size];		/* Pacchetto che arriva dal mezzo */
-
-	while(1) {	
+	
    	do {
         setup_select(s, ns);
 
@@ -204,7 +203,7 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 		
 								if (is_CTS(reg)) {
 
-									if (spedito_RTS(reg)) {			/*<-- DA COMPLETARE!!!!! */
+									if (spedito_RTS(reg)) {			
 
 										from_LTT_to_BLT(reg);
 									}
@@ -269,8 +268,7 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 								
 				}
 			}
-		}
-	}	
+		}	
 }
 /* ------------------------------------------------------------------------- 
 * Nome			: luca
@@ -319,7 +317,9 @@ void* main_sta_thread (void* nsp) {
 
 	sleep (2);
 	
+	while(1) {
     vita_stazione(&stato, t, ns, &reg);
+	}
 
 	return 0;
 

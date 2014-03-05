@@ -1,15 +1,15 @@
 #include "general_include.h"
 
-/* ------------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------------
 
 int appendi_pacchetto (char* dst, char* src, int nnow, int nadd, int ns) {
 	int i;
 	pframe_t *f;
 	
 	f = get_frame_buffer(src);
-	/*mitt = mac2nsta((*f).addr2);*/
+	mitt = mac2nsta((*f).addr2);
 	
-	/*printf ("da STA %d a STA %d: Appendi pacchetto %d %d\n", mitt, (ns+1), nnow, nadd);*/
+	printf ("da STA %d a STA %d: Appendi pacchetto %d %d\n", mitt, (ns+1), nnow, nadd);
 
 	for (i=0;i<nadd;i++) {
 		dst [nnow+i] = src [i];
@@ -18,7 +18,7 @@ int appendi_pacchetto (char* dst, char* src, int nnow, int nadd, int ns) {
 	return (nnow+nadd);
 }
 
-/* ------------------------------------------------------------------------- */
+--------------------------------------------------------------------------- */
 
 long randomTime (long min,long max) {
 	return ((rand() % min)+(max-min));
@@ -144,17 +144,11 @@ int sta_prendi_pacchetto (stato_sta_t *s, char* tmp_pack, sta_registry_t* reg) {
 		
 	/*printf("STA %d : IN LETTURA  \n", ns+1);*/
 
-	(*reg).in_trasmissione = FALSE;
-	(*reg).in_ricezione = TRUE;
-	(*reg).RTS = FALSE;	
-
 	/* Leggiamo il pacchetto arrivato */	
 	do {
 		n = recv (stafd_g [ns], tmp_pack, _max_frame_buffer_size, 0);
 	} while ((n<0) && (errno==EINTR));
 	
-	/*(*reg).nBLR = appendi_pacchetto((*reg).BLR, pack, (*reg).nBLR, n, ns);*/
-
 	/* Appena iniziamo a formare il pacchetto settiamo il timeout  */
 	if ((*reg).nBLR == 0) {
 		(*reg).timePACK = getNOWmsec () + randomTime (_t_timer_delay_min,_t_timer_delay_max);
@@ -479,8 +473,6 @@ void spedisci_CTS(sta_registry_t* reg, stato_sta_t *s) {
 	/* Ci mettiamo in ricezione */
 	(*reg).in_trasmissione = FALSE;
 	(*reg).in_ricezione = TRUE;
-	(*reg).RTS = TRUE;
-
 }
 
 /* ------------------------------------------------------------------------- */
@@ -531,8 +523,6 @@ void spedisci_ACK(sta_registry_t* reg, char ultimo){
 
 char spedito_RTS(sta_registry_t* reg) {
 	
-	printf("%d -- \n", (*reg).RTS);
-	(*reg).RTS = TRUE;
 	if((*reg).RTS) {
 		(*reg).RTS = FALSE;
 		return TRUE;
@@ -802,14 +792,4 @@ void from_LTR_to_LRL(sta_registry_t* reg){
 
 /* ######################################################################### */
 /* ######################################################################### */
-
-
-
-
-
-
-
-
-
-
 
