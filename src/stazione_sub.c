@@ -582,30 +582,6 @@ void aggiorna_MC(sta_registry_t* reg) {
 
 /* ------------------------------------------------------------------------- */
 
-void reset_buffer(sta_registry_t* reg) {
-	int ns;
-	/*
-		deve resettare sia il buffer in cui si accumulano i dati provenienti dal mezzo
-		(il buffer si considera resettato se i caratteri dei primi 3 indici sono 0 2 1)
-		sia la lista che contiene i vari pacchetti di questo blocco
-	*/
-	
-	ns = (*reg).ns;
-	
-#if STA_DEBUG == 1
-	printf(_Csta "STA %d : Il pacchetto non e' per noi. Reset buffer. \n" _CColor_Off, (ns+1));
-#endif
-	fifo_reset((*reg).LTT);
-	/*(*reg).BLT [0] = 0; (*reg).BLT [1] = 2; (*reg).BLT [2] = 1;	*/
-	(*reg).nBLT = 0;
-	(*reg).in_trasmissione = FALSE;
-	(*reg).in_ricezione = FALSE;
-	(*reg).RTS = FALSE;
-
-} 
-
-/* ------------------------------------------------------------------------- */
-
 char scaduto_timeout_PACK (sta_registry_t* reg) {
 	long now = getNOWmsec ();
 
@@ -722,9 +698,9 @@ char dato_da_scartare (sta_registry_t* reg) {
 	x = mac2nsta((*f).addr2);
 	crc = (*f).crc;
 
-	#if STA_DEBUG == 1
-	printf("CRC = %d \n", crc);
-	#endif
+
+	/* printf("CRC = %d \n", crc); */
+
 	
 	if ((*reg).lastProg[x-1] == crc) {			/* Il pacchetto ha lo stesso numero del precedente. Lo scartiamo */
 		ris = TRUE;

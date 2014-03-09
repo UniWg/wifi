@@ -722,9 +722,9 @@ char dato_da_scartare (sta_registry_t* reg) {
 	x = mac2nsta((*f).addr2);
 	crc = (*f).crc;
 
-	#if STA_DEBUG == 1
-	printf("CRC = %d \n", crc);
-	#endif
+
+	/* printf("CRC = %d \n", crc); */
+
 	
 	if ((*reg).lastProg[x-1] == crc) {			/* Il pacchetto ha lo stesso numero del precedente. Lo scartiamo */
 		ris = TRUE;
