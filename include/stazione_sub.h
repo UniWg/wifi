@@ -50,19 +50,6 @@ typedef struct {
 /* ######################################################################### */
 /* ######################################################################### */
 
-/*int appendi_pacchetto (char* dst, char* src, int nnow, int nadd, int ns);*/
-/* ----------------------------------------------------------------------------
-* Nome			: carlo
-* Descrizione	: Aggiunge src in coda a dst
-* Par. Ritorno  : restituisce la lunghezza totale del pacchetto
-* Par. Formali  :
-			- dst  : buffer di destinazione
-			- src  : buffer sorgente
-			- nnow : numero di caratteri presenti nel buffer di destinazione
-			- nadd : numero di caratteri presenti nel buffer sorgente
-			- ns   : numero della stazione
----------------------------------------------------------------------------- */
-
 int sta_prendi_pacchetto (stato_sta_t *s, char* tmp_pack, sta_registry_t* reg);
 /* ----------------------------------------------------------------------------
 * Nome			: luca

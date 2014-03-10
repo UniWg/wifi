@@ -222,12 +222,6 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
 								}
 						
 							}
-							else {
-								/* Se siamo qui vuol dire che bisogna scartare il pacchetto */
-							
-
-								/*reset_buffer(reg);*/
-							}
 						}
 				}
 				

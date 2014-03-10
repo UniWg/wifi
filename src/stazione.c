@@ -67,18 +67,7 @@ void collega_stazione (int ns) {
 	/* Verifichiamo se aggiornare l'indice più alto da controllare */
 	if (stafd_g [ns] > max_fd)		max_fd = stafd_g [ns];
 	
-	/*memset (&local, 0, sizeof(local));
-	local.sin_family = AF_INET;
-	local.sin_addr.s_addr = inet_addr (INADDR_ANY); 
-	local.sin_port = htons (0);*/ 
 	
-	/* Associamo la struttura dati al socket */
-	/*if (bind (stafd_g [ns], (sa_t*) &local, sizeof (local))<0) {
-               printf (_Cerror"Stazione %d: bind() failed, Err: %d \"%s\"\n" _CColor_Off, ns, errno, strerror (errno));
-               exit(1);
-    }
-	DEBUG_STA "STA: Bind eseguita con successo\n" END_STA
-	*/
 	memset (&mezzo, 0, sizeof (mezzo));
 	mezzo.sin_family = AF_INET;
 	mezzo.sin_addr.s_addr =	inet_addr (_indirizzoIP);

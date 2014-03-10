@@ -1,24 +1,7 @@
 #include "general_include.h"
 
-/* ---------------------------------------------------------------------------
+/* ------------------------------------------------------------------------- */
 
-int appendi_pacchetto (char* dst, char* src, int nnow, int nadd, int ns) {
-	int i;
-	pframe_t *f;
-	
-	f = get_frame_buffer(src);
-	mitt = mac2nsta((*f).addr2);
-	
-	printf ("da STA %d a STA %d: Appendi pacchetto %d %d\n", mitt, (ns+1), nnow, nadd);
-
-	for (i=0;i<nadd;i++) {
-		dst [nnow+i] = src [i];
-	}
-	free (f);
-	return (nnow+nadd);
-}
-
---------------------------------------------------------------------------- */
 
 long randomTime (long min,long max) {
 	return ((rand() % min)+(max-min));
