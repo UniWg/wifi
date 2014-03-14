@@ -197,8 +197,6 @@ void controlla_conflitto_di_destinazioni (area_t* aree) {
 	/* Per semplicitá non cicliamo sulle aree, ma consideriamo solo le due aree attive */
 	/* Diamo errore se entrambe le aree vogliono trasmettere alla stazione 4 (quella in comune) */
 	
-	/* DA MIGLIORARE */
-	
 	/* Ha senso fare la verifica solo se entrambe le aree hanno un pacchetto */
 	if ((aree[0].durata > 0) && (aree[1].durata > 0)) {	
 		get_dest (0,aree,d1);	
@@ -209,10 +207,6 @@ void controlla_conflitto_di_destinazioni (area_t* aree) {
 			for (i=0;i<=1;i++) {
 				set_CRC0 (i,aree);
 			}
-			
-			/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-			/* Togliamo il pacchetto dell'area 1. 
-				nella versione definitiva dovrà essere tolto il pacchetto della stazione che arriva per seconda */
 				
 			/* A questo punto il pacchetto che viene scartato non viene mandato a nessuna stazione dell'area
 				quindi la stazione che aveva mandato (per esempio) un RTS non si vedrà arrivare risposta e
@@ -228,11 +222,6 @@ void controlla_conflitto_di_destinazioni (area_t* aree) {
 				aree [i].errore_in_corso = FALSE;
 				aree [i].spedita_prima_parte_errore = FALSE;
 			}
-			
-			
-		
-					
-			/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
 		}
 	}
 }
@@ -364,7 +353,7 @@ void reset_area (int index,area_t* aree) {
 void set_CRC0 (int index,area_t* aree) {
 	pframe_t* f;
 	
-	/* Individuiamo la lunchezza del pacchetto ... */
+	/* Individuiamo la lunghezza del pacchetto ... */
 	f = get_frame_buffer (aree [index].pack);
 	
 	/* ... e mettiamo a zero l'ultimo byte, quello corrispondente al CRC */

@@ -151,11 +151,8 @@ void vita_stazione(stato_sta_t *s, timev_t t, int ns, sta_registry_t* reg) {
         setup_select(s, ns);
 
 		(*s).nready = select ((*s).fdtop+1,&(*s).Rset,&(*s).Wset,NULL,&t); 
-		/* SOLO PER DEBUG */
 		save_errno = errno;
-		/*printf ("nready=%d\t", (*s).nready);*/
 		errno = save_errno;
-		/* FINE SOLO PER DEBUG */
 
 	} while (((*s).nready<0) && (errno==EINTR));
 	
