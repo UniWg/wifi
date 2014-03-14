@@ -20,6 +20,7 @@ pthread_mutex_t mutexLRL [_nsta];	/* ... e relative mutex */
 pthread_t tidentity [_nsta];		/* Contiene gli identificativi dei thread delle applicazioni */	
 
 char prog_crc [_nsta];				/* Progressivi dei pacchetti */
+char app_cicli;						/* Contatore di cicli per le simulazioni */
 
 /* ---------------------------------------------------------------------------- */
 

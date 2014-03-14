@@ -27,6 +27,12 @@ void* app_thread1 (void* param) {
 				Recv (mittmac,buf,&msg_len);
 				printf (_Capp "Applicazione %d - Ricevuto messaggio da applicazione %s\n" _CColor_Off,na+1,mittmac);
 				printf (_Capp "%s \n\n" _CColor_Off,buf);
+				
+				app_cicli++;
+				if (app_cicli == 10) {
+					printf ("\n Success !! \n\n");
+					exit (0);
+				}
 			}
 			break;
 		}
@@ -43,6 +49,12 @@ void* app_thread1 (void* param) {
 				Recv (mittmac,buf,&msg_len);
 				printf (_Capp "Applicazione %d - Ricevuto messaggio da applicazione %s\n" _CColor_Off,na+1,mittmac);
 				printf (_Capp "%s \n\n" _CColor_Off,buf);
+				
+				app_cicli++;
+				if (app_cicli == 5) {
+					printf ("\n Success !! \n\n");
+					exit (0);
+				}
 			}
 			break;
 		}
@@ -57,6 +69,12 @@ void* app_thread1 (void* param) {
 				strcat (buf,"-sta1");
 				/* ... e spedisco la risposta a sta2 */
 				Send (_mac_sta2,buf,strlen (buf));
+				
+				app_cicli++;
+				if (app_cicli == 5) {
+					printf ("\n Success !! \n\n");
+					exit (0);
+				}
 			}
 			break;
 		}
@@ -387,6 +405,12 @@ void* app_thread4 (void* param) {
 				Recv (mittmac,buf,&msg_len);
 				printf (_Capp "Applicazione %d - Ricevuto messaggio da applicazione %s\n" _CColor_Off,na+1,mittmac);
 				printf (_Capp "%s \n\n" _CColor_Off,buf);
+				
+				app_cicli++;
+				if (app_cicli == 5) {
+					printf ("\n Success !! \n\n");
+					exit (0);
+				}
 			}
 			break;
 		}
@@ -492,9 +516,11 @@ void start_app_thread (int ricetta) {
 		dati relativa è accessibile a livello globale */
 	int r,i;
 	applica_t *s;
-
+	app_cicli = 0;	/* Contatore di cicli per le similazioni 1,2,3,4 */
+	
+	/* Ciclo di inizializzazione dei thread*/
 	for (i=1; i<=_nsta; i++) {
-		LTL [i-1] = fifo_create ();
+		LTL [i-1] = fifo_create ();		/* Ogni thread ha le sue fifo */
     	LRL [i-1] = fifo_create ();
     	prog_crc [i-1] = 5;
 	

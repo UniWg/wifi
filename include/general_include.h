@@ -19,7 +19,6 @@
 #include "colors.h"
 #include "mezzo.h"
 #include "mezzo_sub.h"
-#include "read_write.h"
 #include "stazione.h"
 #include "stazione_sub.h"
 #include "applica_sub.h"
